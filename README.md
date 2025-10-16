@@ -11,7 +11,10 @@ This is a starter Django project for the Advanced Web Mapping module (College As
 ## Setup
 1. Clone the repository and navigate to the project folder.
 2. Create and activate a Python virtual environment (e.g., `ca_env`).
-3. Install dependencies (see requirements or use pip).
+3. Install dependencies from `requirements.txt`:
+   ```
+   pip install -r requirements.txt
+   ```
 4. Configure your database settings in `ca_project/settings.py`.
 5. Run migrations:
    ```
