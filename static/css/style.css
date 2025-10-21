@@ -1,0 +1,178 @@
+/* Global Styles */
+:root {
+    --primary-color: #0d6efd;
+    --secondary-color: #6c757d;
+    --success-color: #198754;
+    --info-color: #0dcaf0;
+    --warning-color: #ffc107;
+    --danger-color: #dc3545;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa;
+}
+
+/* Navigation */
+.navbar-brand {
+    font-weight: 600;
+}
+
+.navbar-brand i {
+    color: #ffd700;
+}
+
+/* Map Container */
+#map-container {
+    background-color: #e9ecef;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    margin: 1rem;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+#map {
+    border-radius: 0.5rem;
+}
+
+/* Map Overlays */
+.map-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.9);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    backdrop-filter: blur(2px);
+}
+
+.map-info-box {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    z-index: 1000;
+}
+
+/* Sidebar Styling */
+.status-item {
+    display: flex;
+    align-items: center;
+}
+
+.card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+/* Form Enhancements */
+.form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.btn {
+    font-weight: 500;
+    transition: all 0.2s ease-in-out;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 0.2rem 0.4rem rgba(0, 0, 0, 0.1);
+}
+
+/* Leaflet Popup Customization */
+.leaflet-popup-content {
+    font-family: inherit;
+}
+
+.custom-popup {
+    text-align: center;
+}
+
+.custom-popup h6 {
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+}
+
+.custom-popup .coordinates {
+    font-family: 'Courier New', monospace;
+    font-size: 0.85em;
+    color: var(--secondary-color);
+    background-color: #f8f9fa;
+    padding: 0.25rem;
+    border-radius: 0.25rem;
+    margin: 0.5rem 0;
+}
+
+/* Loading Animation */
+.spinner-border {
+    width: 3rem;
+    height: 3rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .map-info-box {
+        bottom: 5px;
+        left: 5px;
+        right: 5px;
+    }
+    
+    .map-info-box small {
+        font-size: 0.75rem;
+    }
+    
+    #map-container {
+        margin: 0.5rem;
+    }
+    
+    #map {
+        height: 50vh !important;
+    }
+}
+
+/* Animation Classes */
+.fade-in {
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.bounce-in {
+    animation: bounceIn 0.6s ease-out;
+}
+
+@keyframes bounceIn {
+    0% {
+        transform: scale(0.3);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    70% {
+        transform: scale(0.9);
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
