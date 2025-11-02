@@ -1,3 +1,4 @@
+from .models import PopulationPoint
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.contrib.gis.geos import Point
@@ -105,3 +106,74 @@ def county_wash_counts(request):
             'wash_count': wash_count
         })
     return JsonResponse({'counts': counts})
+
+# New view: nearby populated places sorted by distance
+def nearby_populated_places(request):
+    try:
+        lat = float(request.GET.get('lat'))
+        lng = float(request.GET.get('lng'))
+        user_point = Point(lng, lat, srid=4326)
+        # Limit to 10 nearest populated places
+        nearby = PopulationPoint.objects.annotate(
+            distance=Distance('point', user_point)
+        ).order_by('distance')[:10]
+        places = []
+        for place in nearby:
+            places.append({
+                'id': place.id,
+                'name': place.name,
+                'lat': place.point.y,
+                'lng': place.point.x,
+                'population': place.population,
+                'place': place.place,
+                'distance': place.distance.km
+            })
+        return JsonResponse({'places': places})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
+
+# New view: recommend car wash locations in a county
+def recommend_carwash_locations(request):
+    try:
+        county_id = request.GET.get('county_id')
+        min_distance_km = float(request.GET.get('min_distance_km', 5))  # Minimum distance from existing car wash
+        max_settlement_distance_km = float(request.GET.get('max_settlement_distance_km', 10))  # Max distance to settlement
+        # Get county polygon
+        county = IrishCounty.objects.get(id=county_id)
+        # Get all car washes in county
+        carwashes = Location.objects.filter(point__within=county.geom)
+        carwash_points = [cw.point for cw in carwashes]
+        # Get all settlements in county
+        settlements = PopulationPoint.objects.filter(point__within=county.geom)
+        # Candidate grid: use settlements as candidate points
+        candidates = []
+        for settlement in settlements:
+            # Distance to nearest car wash
+            if carwash_points:
+                distances = [settlement.point.distance(cw_point) for cw_point in carwash_points]
+                min_dist_km = min(distances) * 111  # Convert degrees to km (approx)
+            else:
+                min_dist_km = None
+            # Is candidate far enough from car washes?
+            if min_dist_km is not None and min_dist_km < min_distance_km:
+                continue
+            # Is candidate close enough to a settlement? (itself is a settlement)
+            # Optionally, check for other settlements nearby
+            nearby_settlements = PopulationPoint.objects.filter(
+                point__distance_lte=(settlement.point, max_settlement_distance_km / 111)
+            ).count()
+            candidates.append({
+                'id': settlement.id,
+                'name': settlement.name,
+                'lat': settlement.point.y,
+                'lng': settlement.point.x,
+                'population': settlement.population,
+                'place': settlement.place,
+                'min_distance_to_carwash_km': min_dist_km,
+                'nearby_settlements': nearby_settlements
+            })
+        # Rank by distance from nearest car wash (descending), then by population (descending)
+        candidates = sorted(candidates, key=lambda x: (x['min_distance_to_carwash_km'] or 0, x['population'] or 0), reverse=True)
+        return JsonResponse({'recommendations': candidates[:10]})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)

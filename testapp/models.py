@@ -82,3 +82,22 @@ class IrishCounty(models.Model):
         if self.geom:
             return self.geom.area * 12365.181  # Convert to km2 (approximate for Ireland)
         return None
+    
+class PopulationPoint(models.Model):
+    """Model for imported population points (towns, villages, cities) from OSM/GeoJSON"""
+    id = models.CharField(max_length=32, primary_key=True)  # OSM id (e.g., node/123456)
+    name = models.CharField(max_length=200, blank=True, null=True)
+    population = models.IntegerField(blank=True, null=True)
+    place = models.CharField(max_length=50, blank=True, null=True)
+    place_county = models.CharField(max_length=100, blank=True, null=True)
+    is_in = models.CharField(max_length=100, blank=True, null=True)
+    point = models.PointField(db_column='wkb_geometry')
+
+    class Meta:
+        db_table = 'population_points'
+        managed = False  # Table is managed externally (imported)
+        verbose_name = "Population Point"
+        verbose_name_plural = "Population Points"
+
+    def __str__(self):
+        return f"{self.name or self.id} ({self.population or 'unknown'})"

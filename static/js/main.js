@@ -450,6 +450,12 @@ function loadCountyBoundaries() {
                             if (props.alt_name) popupContent += `<b>Alt Name:</b> ${props.alt_name}<br>`;
                             if (props.area) popupContent += `<b>Area:</b> ${props.area}<br>`;
                             layer.bindPopup(popupContent);
+                            // Add click event for business mode recommendation
+                            layer.on('click', function () {
+                                if (currentMode === 'business') {
+                                    showRecommendedCarwashLocation(feature.id || feature.properties.id || feature.properties.osm_id);
+                                }
+                            });
                         }
                     });
                     countyLayer.addTo(map);
@@ -512,6 +518,43 @@ function showNearbyCarwashesList(carwashes) {
         list.appendChild(li);
     });
     card.style.display = '';
+}
+
+// Show recommended car wash location for a county
+function showRecommendedCarwashLocation(countyId) {
+    fetch(`/recommend_carwash_locations/?county_id=${countyId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.recommendations && data.recommendations.length > 0) {
+                const rec = data.recommendations[0];
+                // Remove previous recommended marker if exists
+                if (window.recommendedCarwashMarker) {
+                    map.removeLayer(window.recommendedCarwashMarker);
+                }
+                // Add marker for recommended location
+                const icon = L.divIcon({
+                    className: 'recommended-marker',
+                    html: `<div style="background-color: #ff5722; width: 18px; height: 18px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.5);"></div>`,
+                    iconSize: [22, 22],
+                    iconAnchor: [11, 11]
+                });
+                window.recommendedCarwashMarker = L.marker([rec.lat, rec.lng], { icon }).addTo(map);
+                window.recommendedCarwashMarker.bindPopup(
+                    `<b>Recommended Car Wash Site</b><br>` +
+                    `Settlement: ${rec.name || 'Unknown'}<br>` +
+                    `Population: ${rec.population || 'Unknown'}<br>` +
+                    `Distance to nearest car wash: ${rec.min_distance_to_carwash_km ? rec.min_distance_to_carwash_km.toFixed(2) : 'N/A'} km` +
+                    `<br>Nearby settlements: ${rec.nearby_settlements}`
+                ).openPopup();
+                map.setView([rec.lat, rec.lng], Math.max(map.getZoom(), 11));
+            } else {
+                showAlert('info', 'No suitable recommended site found in this county.');
+            }
+        })
+        .catch(error => {
+            showAlert('danger', 'Failed to fetch recommended car wash location.');
+            console.error(error);
+        });
 }
 
 document.getElementById('user-mode-btn').addEventListener('click', function () {
