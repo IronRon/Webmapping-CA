@@ -1,6 +1,8 @@
 // Global variables
 let map;
 let userMarkers = [];
+let currentMode = 'user'; // 'user' or 'business'
+let countyLayer = null;
 
 // Initialize application when page loads
 document.addEventListener('DOMContentLoaded', function () {
@@ -49,16 +51,56 @@ function setupEventListeners() {
         const lat = e.latlng.lat.toFixed(6);
         const lng = e.latlng.lng.toFixed(6);
 
-        // Update coordinate display
-        document.getElementById('map-coordinates').textContent =
-            `Coordinates: ${lat}, ${lng}`;
+        // // Update coordinate display
+        // document.getElementById('map-coordinates').textContent =
+        //     `Coordinates: ${lat}, ${lng}`;
 
-        // Fill form inputs
-        document.getElementById('location-lat').value = lat;
-        document.getElementById('location-lng').value = lng;
+        // // Fill form inputs
+        // document.getElementById('location-lat').value = lat;
+        // document.getElementById('location-lng').value = lng;
 
         // Show temporary marker
         showTemporaryMarker(e.latlng);
+
+        // Remove previous nearest marker if exists
+        if (window.nearestCarwashMarker) {
+            map.removeLayer(window.nearestCarwashMarker);
+            window.nearestCarwashMarker = null;
+        }
+
+        // Send coordinates to backend to find nearest car wash
+        fetch(`/nearest_carwash/?lat=${lat}&lng=${lng}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data && data.location) {
+                    const carwash = data.location;
+                    // Show marker and popup for nearest car wash
+                    window.nearestCarwashMarker = L.marker([carwash.lat, carwash.lng]).addTo(map);
+                    window.nearestCarwashMarker.bindPopup(`<b>Nearest Car Wash</b><br>
+                    Name: ${carwash.name}<br>
+                    Address: ${carwash.address || ''}<br>
+                    Distance: ${data.distance.toFixed(2)} km`).openPopup();
+                } else {
+                    showAlert('info', 'No car wash found nearby.');
+                }
+            })
+            .catch(error => {
+                showAlert('danger', 'Failed to find nearest car wash.');
+                console.error(error);
+            });
+
+        // Fetch and display nearby car washes list (user mode only)
+        if (currentMode === 'user') {
+            fetch(`/nearby_carwashes/?lat=${lat}&lng=${lng}`)
+                .then(response => response.json())
+                .then(data => {
+                    showNearbyCarwashesList(data.carwashes);
+                })
+                .catch(error => {
+                    showNearbyCarwashesList([]);
+                });
+        }
+
     });
 
     // Quick add form submission
@@ -258,6 +300,7 @@ function showTemporaryMarker(latlng) {
     // Remove existing temporary marker if any
     if (window.tempMarker) {
         map.removeLayer(window.tempMarker);
+        window.tempMarker = null;
     }
 
     const tempIcon = L.divIcon({
@@ -275,15 +318,15 @@ function showTemporaryMarker(latlng) {
         iconAnchor: [7, 7]
     });
 
-    window.tempMarker = L.marker(latlng, { icon }).addTo(map);
+    window.tempMarker = L.marker(latlng, { icon: tempIcon }).addTo(map);
 
     // Auto-remove after 3 seconds
-    setTimeout(() => {
-        if (window.tempMarker) {
-            map.removeLayer(window.tempMarker);
-            window.tempMarker = null;
-        }
-    }, 3000);
+    // setTimeout(() => {
+    //     if (window.tempMarker) {
+    //         map.removeLayer(window.tempMarker);
+    //         window.tempMarker = null;
+    //     }
+    // }, 3000);
 }
 
 /**
@@ -368,27 +411,136 @@ function loadCountyBoundaries() {
     fetch('/counties.geojson')
         .then(response => response.json())
         .then(data => {
-            L.geoJSON(data, {
-                style: {
-                    color: '#198754',
-                    weight: 2,
-                    fillOpacity: 0.1
-                },
-                onEachFeature: function (feature, layer) {
-                    const props = feature.properties;
-                    let popupContent = `<b>County</b><br>`;
-                    if (props.name_en) popupContent += `<b>English Name:</b> ${props.name_en}<br>`;
-                    if (props.name_ga) popupContent += `<b>Irish Name:</b> ${props.name_ga}<br>`;
-                    if (props.alt_name) popupContent += `<b>Alt Name:</b> ${props.alt_name}<br>`;
-                    if (props.area) popupContent += `<b>Area:</b> ${props.area}<br>`;
-                    layer.bindPopup(popupContent);
-                }
-            }).addTo(map);
+            // fetch wash counts and use heatmap colors
+            fetch('/county_wash_counts/')
+                .then(response => response.json())
+                .then(countData => {
+                    const counts = countData.counts;
+                    let min = Infinity, max = -Infinity;
+                    const countMap = {};
+                    counts.forEach(c => {
+                        countMap[c.name_en] = c.wash_count;
+                        if (c.wash_count < min) min = c.wash_count;
+                        if (c.wash_count > max) max = c.wash_count;
+                    });
+                    if (countyLayer) map.removeLayer(countyLayer);
+                    countyLayer = L.geoJSON(data, {
+                        style: function (feature) {
+                            const name = feature.properties.name_en;
+                            const count = countMap[name] || 0;
+                            let ratio = (count - min) / (max - min || 1);
+                            let r = Math.round(255 * ratio);
+                            let g = Math.round(180 * (1 - ratio));
+                            let color = `rgb(${r},${g},60)`;
+                            return {
+                                color: color,
+                                weight: 2,
+                                fillOpacity: 0.6,
+                                fillColor: color
+                            };
+                        },
+                        onEachFeature: function (feature, layer) {
+                            const props = feature.properties;
+                            const name = props.name_en;
+                            const count = countMap[name] || 0;
+                            let popupContent = `<b>County</b><br>`;
+                            popupContent += `<b>English Name:</b> ${name}<br>`;
+                            popupContent += `<b>Car Washes:</b> ${count}<br>`;
+                            if (props.name_ga) popupContent += `<b>Irish Name:</b> ${props.name_ga}<br>`;
+                            if (props.alt_name) popupContent += `<b>Alt Name:</b> ${props.alt_name}<br>`;
+                            if (props.area) popupContent += `<b>Area:</b> ${props.area}<br>`;
+                            layer.bindPopup(popupContent);
+                        }
+                    });
+                    countyLayer.addTo(map);
+                })
+                .catch(error => {
+                    showAlert('danger', 'Failed to fetch Counties Wash Numbers.');
+                    console.error(error);
+                });
         })
         .catch(error => {
             showAlert('danger', 'Failed to load county boundaries.');
             console.error(error);
         });
+}
+
+function updateLayersForMode() {
+    if (countyLayer) {
+        if (currentMode === 'business') {
+            countyLayer.addTo(map);
+        } else {
+            map.removeLayer(countyLayer);
+        }
+    }
+    // Optionally hide/show other layers or UI elements
+}
+
+/**
+ * Show Nearby Car Washes List in sidebar
+ */
+function showNearbyCarwashesList(carwashes) {
+    const card = document.getElementById('nearby-carwashes-card');
+    const list = document.getElementById('nearby-carwashes-list');
+    if (!card || !list) return;
+    // Only show in user mode
+    if (currentMode !== 'user') {
+        card.style.display = 'none';
+        return;
+    }
+    list.innerHTML = '';
+    if (!carwashes || carwashes.length === 0) {
+        list.innerHTML = '<li class="list-group-item text-muted">No car washes found nearby.</li>';
+        card.style.display = '';
+        return;
+    }
+    carwashes.forEach((cw, idx) => {
+        const li = document.createElement('li');
+        li.className = 'list-group-item d-flex justify-content-between align-items-center';
+        li.innerHTML = `
+            <div>
+                <b>${cw.name || 'Unnamed'}</b><br>
+                <small>${cw.address}</small>
+            </div>
+            <span class="badge bg-primary">${cw.distance.toFixed(2)} km</span>
+        `;
+        li.style.cursor = 'pointer';
+        li.onclick = function () {
+            map.setView([cw.lat, cw.lng], Math.max(map.getZoom(), 13));
+            // Optionally highlight marker or show popup
+        };
+        list.appendChild(li);
+    });
+    card.style.display = '';
+}
+
+document.getElementById('user-mode-btn').addEventListener('click', function () {
+    setMode('user');
+});
+document.getElementById('business-mode-btn').addEventListener('click', function () {
+    setMode('business');
+});
+
+function setMode(mode) {
+    currentMode = mode;
+    document.getElementById('user-mode-btn').classList.toggle('active', mode === 'user');
+    document.getElementById('business-mode-btn').classList.toggle('active', mode === 'business');
+    updateLayersForMode();
+    // Hide nearby car washes list if not in user mode
+    const card = document.getElementById('nearby-carwashes-card');
+    if (card) card.style.display = (mode === 'user') ? '' : 'none';
+    if (card && mode !== 'user') {
+        const list = document.getElementById('nearby-carwashes-list');
+        if (list) list.innerHTML = '';
+    }
+    if (window.tempMarker) {
+        map.removeLayer(window.tempMarker);
+        window.tempMarker = null;
+    }
+    if (window.nearestCarwashMarker) {
+        map.removeLayer(window.nearestCarwashMarker);
+        window.nearestCarwashMarker = null;
+    }
 }
 
 // CSS for animations
