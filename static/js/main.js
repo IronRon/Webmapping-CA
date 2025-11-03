@@ -463,6 +463,7 @@ function showAlert(type, message) {
  * Load and display county boundaries
  */
 function loadCountyBoundaries() {
+    showMapLoading(true);
     fetch('/counties.geojson')
         .then(response => response.json())
         .then(data => {
@@ -514,13 +515,16 @@ function loadCountyBoundaries() {
                         }
                     });
                     countyLayer.addTo(map);
+                    showMapLoading(false);
                 })
                 .catch(error => {
+                    showMapLoading(false);
                     showAlert('danger', 'Failed to fetch Counties Wash Numbers.');
                     console.error(error);
                 });
         })
         .catch(error => {
+            showMapLoading(false);
             showAlert('danger', 'Failed to load county boundaries.');
             console.error(error);
         });
