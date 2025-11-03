@@ -13,17 +13,30 @@ CleanMyRide is a location-based web application that helps users find nearby car
 - County heatmap visualization: counties are always color-coded by car wash density using a green-to-red scale
 - Business analytics mode always displays county heatmap for market saturation and opportunities
 - Improved marker logic: only one marker shown for user actions, clean marker management
+- **Interactive UI Improvements:**
+   - Sidebar parameters for business analytics, including min/max distance and circle radius
+   - Only one temporary marker and one recommended marker shown at a time
+   - Map click logic adapts to current mode (user/business/circle)
+   - Circle color is orange for clear visibility
+   - All new features are fully integrated with the existing analytics and visualization tools
 - Two main modes: User Mode and Business Mode
    - **User Mode:**
-      - View all car washes in Ireland and the US
-      - Search for nearest car wash or within a chosen radius
+      - View all car washes in Ireland
+      - Search for nearest car wash
       - Interactive markers with details (name, address, service type, operating hours)
       - See a list of nearby car washes after clicking on the map
    - **Business Mode:**
       - Analytical view of car wash coverage by county (heatmap)
       - Counties always color-coded by car wash count (spatial aggregation)
       - Clickable counties for details: number of car washes, names, and more
-      - "Site Evaluation" tool: propose new locations, get feedback on suitability (future)
+      - **County Recommendation:**
+         - Default mode for business analytics
+         - Click a county to view car wash statistics and get a recommended site for a new car wash based on county data
+         - Visual feedback with county heatmap and recommended marker
+      - **Circle Recommendation:**
+         - Toggle to circle mode to select a custom area for analysis
+         - Click the map to set the center and radius, and get a recommended site for a new car wash
+         - Visual feedback with a drawn circle and recommended marker
 
 ## Technical Stack
 - Python 3.x, Django 4.x, GeoDjango
@@ -60,7 +73,16 @@ CleanMyRide is a location-based web application that helps users find nearby car
 - Switch between User Mode and Business Mode for different analysis tools.
 - In Business Mode, view the county heatmap showing car wash density and click counties for details.
 - In User Mode, click the map to find the nearest car wash and see a list of nearby car washes.
-- Use the Site Evaluation tool in Business Mode to assess new locations (future feature).
+- In Business County Mode, click any county to view car wash statistics and get a recommended location for a new car wash based on county population and density.
+- In Business Circle Mode, toggle to circle recommendation, click the map to set the center, adjust the radius, and view recommended locations for new car washes within the selected area.
+- The map and sidebar update interactively based on the selected mode and parameters.
+- **Recommendation Algorithm:**
+   - For both county and circle modes, the backend uses population points (settlements) as candidate locations for new car washes.
+   - For each candidate, it calculates the distance to the nearest existing car wash and the number of nearby settlements.
+   - Candidates are filtered to ensure a minimum distance from existing car washes and proximity to settlements.
+   - The best locations are ranked by distance from the nearest car wash (favoring underserved areas) and by population (favoring larger settlements).
+   - The top recommended sites are returned to the frontend and visualized on the map.
+   - All spatial queries use PostGIS and GeoDjango for efficient geospatial analysis.
 
 ## Notes
 - The main app is `testapp`, which contains spatial models and views.
