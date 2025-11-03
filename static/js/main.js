@@ -10,7 +10,9 @@ document.addEventListener('DOMContentLoaded', function () {
     initializeMap();
     setupEventListeners();
     loadSampleData();
-    loadCountyBoundaries();
+    if (currentMode === 'business') {
+        loadCountyBoundaries();
+    }
 });
 
 /**
@@ -51,46 +53,100 @@ function setupEventListeners() {
         const lat = e.latlng.lat.toFixed(6);
         const lng = e.latlng.lng.toFixed(6);
 
-        // // Update coordinate display
-        // document.getElementById('map-coordinates').textContent =
-        //     `Coordinates: ${lat}, ${lng}`;
-
-        // // Fill form inputs
-        // document.getElementById('location-lat').value = lat;
-        // document.getElementById('location-lng').value = lng;
-
         // Show temporary marker
         showTemporaryMarker(e.latlng);
 
-        // Remove previous nearest marker if exists
-        if (window.nearestCarwashMarker) {
-            map.removeLayer(window.nearestCarwashMarker);
-            window.nearestCarwashMarker = null;
+        if (currentMode === 'business' && businessRecommendMode === 'circle') {
+            // Set sidebar lat/lng fields
+            document.getElementById('circle-lat').value = lat;
+            document.getElementById('circle-lng').value = lng;
+
+            // Draw circle on map
+            const radiusKm = parseFloat(document.getElementById('circle-radius-km').value) || 10;
+            const radiusMeters = radiusKm * 1000;
+            // Remove previous circle if exists
+            if (window.businessCircle) {
+                map.removeLayer(window.businessCircle);
+                window.businessCircle = null;
+            }
+            window.businessCircle = L.circle([lat, lng], {
+                radius: radiusMeters,
+                color: '#ff9800', // orange
+                fillColor: '#ff9800',
+                fillOpacity: 0.15,
+                weight: 2
+            }).addTo(map);
+            // Optionally zoom to fit circle
+            map.fitBounds(window.businessCircle.getBounds(), { maxZoom: 13 });
+
+            // Call backend for recommended location in circle
+            let minDistanceKm = parseFloat(document.getElementById('min-distance-km').value) || 5;
+            let maxSettlementDistanceKm = parseFloat(document.getElementById('max-settlement-distance-km').value) || 10;
+            fetch(`/recommend_carwash_locations_circle/?lat=${lat}&lng=${lng}&radius_km=${radiusKm}&min_distance_km=${minDistanceKm}&max_settlement_distance_km=${maxSettlementDistanceKm}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.recommendations && data.recommendations.length > 0) {
+                        const rec = data.recommendations[0];
+                        // Remove previous recommended marker if exists
+                        if (window.recommendedCarwashMarker) {
+                            map.removeLayer(window.recommendedCarwashMarker);
+                        }
+                        // Add marker for recommended location
+                        const icon = L.divIcon({
+                            className: 'recommended-marker',
+                            html: `<div style="background-color: #ff5722; width: 18px; height: 18px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.5);"></div>`,
+                            iconSize: [22, 22],
+                            iconAnchor: [11, 11]
+                        });
+                        window.recommendedCarwashMarker = L.marker([rec.lat, rec.lng], { icon }).addTo(map);
+                        window.recommendedCarwashMarker.bindPopup(
+                            `<b>Recommended Car Wash Site</b><br>` +
+                            `Settlement: ${rec.name || 'Unknown'}<br>` +
+                            `Population: ${rec.population || 'Unknown'}<br>` +
+                            `Distance to nearest car wash: ${rec.min_distance_to_carwash_km ? rec.min_distance_to_carwash_km.toFixed(2) : 'N/A'} km` +
+                            `<br>Nearby settlements: ${rec.nearby_settlements}`
+                        ).openPopup();
+                        map.setView([rec.lat, rec.lng], Math.max(map.getZoom(), 11));
+                    } else {
+                        showAlert('info', 'No suitable recommended site found in this circle.');
+                    }
+                })
+                .catch(error => {
+                    showAlert('danger', 'Failed to fetch recommended car wash location for circle.');
+                    console.error(error);
+                });
+            return;
         }
 
-        // Send coordinates to backend to find nearest car wash
-        fetch(`/nearest_carwash/?lat=${lat}&lng=${lng}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data && data.location) {
-                    const carwash = data.location;
-                    // Show marker and popup for nearest car wash
-                    window.nearestCarwashMarker = L.marker([carwash.lat, carwash.lng]).addTo(map);
-                    window.nearestCarwashMarker.bindPopup(`<b>Nearest Car Wash</b><br>
+        if (currentMode === 'user') {
+            // Remove previous nearest marker if exists
+            if (window.nearestCarwashMarker) {
+                map.removeLayer(window.nearestCarwashMarker);
+                window.nearestCarwashMarker = null;
+            }
+
+            // Send coordinates to backend to find nearest car wash
+            fetch(`/nearest_carwash/?lat=${lat}&lng=${lng}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data && data.location) {
+                        const carwash = data.location;
+                        // Show marker and popup for nearest car wash
+                        window.nearestCarwashMarker = L.marker([carwash.lat, carwash.lng]).addTo(map);
+                        window.nearestCarwashMarker.bindPopup(`<b>Nearest Car Wash</b><br>
                     Name: ${carwash.name}<br>
                     Address: ${carwash.address || ''}<br>
                     Distance: ${data.distance.toFixed(2)} km`).openPopup();
-                } else {
-                    showAlert('info', 'No car wash found nearby.');
-                }
-            })
-            .catch(error => {
-                showAlert('danger', 'Failed to find nearest car wash.');
-                console.error(error);
-            });
+                    } else {
+                        showAlert('info', 'No car wash found nearby.');
+                    }
+                })
+                .catch(error => {
+                    showAlert('danger', 'Failed to find nearest car wash.');
+                    console.error(error);
+                });
 
-        // Fetch and display nearby car washes list (user mode only)
-        if (currentMode === 'user') {
+            // Fetch and display nearby car washes list
             fetch(`/nearby_carwashes/?lat=${lat}&lng=${lng}`)
                 .then(response => response.json())
                 .then(data => {
@@ -100,7 +156,6 @@ function setupEventListeners() {
                     showNearbyCarwashesList([]);
                 });
         }
-
     });
 
     // Quick add form submission
@@ -522,7 +577,13 @@ function showNearbyCarwashesList(carwashes) {
 
 // Show recommended car wash location for a county
 function showRecommendedCarwashLocation(countyId) {
-    fetch(`/recommend_carwash_locations/?county_id=${countyId}`)
+    let minDistanceKm = 5;
+    let maxSettlementDistanceKm = 10;
+    if (currentMode === 'business') {
+        minDistanceKm = parseFloat(document.getElementById('min-distance-km').value) || 5;
+        maxSettlementDistanceKm = parseFloat(document.getElementById('max-settlement-distance-km').value) || 10;
+    }
+    fetch(`/recommend_carwash_locations/?county_id=${countyId}&min_distance_km=${minDistanceKm}&max_settlement_distance_km=${maxSettlementDistanceKm}`)
         .then(response => response.json())
         .then(data => {
             if (data.recommendations && data.recommendations.length > 0) {
@@ -564,11 +625,61 @@ document.getElementById('business-mode-btn').addEventListener('click', function 
     setMode('business');
 });
 
+// --- Business Recommendation Mode Toggle Logic ---
+let businessRecommendMode = 'county'; // 'county' or 'circle'
+
+document.getElementById('county-recommend-mode-btn').addEventListener('click', function () {
+    setBusinessRecommendMode('county');
+});
+document.getElementById('circle-recommend-mode-btn').addEventListener('click', function () {
+    setBusinessRecommendMode('circle');
+});
+
+function setBusinessRecommendMode(mode) {
+    businessRecommendMode = mode;
+    document.getElementById('county-recommend-mode-btn').classList.toggle('active', mode === 'county');
+    document.getElementById('circle-recommend-mode-btn').classList.toggle('active', mode === 'circle');
+    // Show/hide circle params
+    document.getElementById('circle-recommend-params').style.display = (mode === 'circle') ? '' : 'none';
+    // Remove circle if toggling away from circle mode
+    if (mode !== 'circle' && window.businessCircle) {
+        map.removeLayer(window.businessCircle);
+        window.businessCircle = null;
+    }
+    // Disable county layer interaction in circle mode
+    if (countyLayer) {
+        countyLayer.eachLayer(function (layer) {
+            if (mode === 'circle') {
+                layer.off('click');
+            } else {
+                layer.on('click', function () {
+                    if (currentMode === 'business' && businessRecommendMode === 'county') {
+                        showRecommendedCarwashLocation(layer.feature.id || layer.feature.properties.id || layer.feature.properties.osm_id);
+                    }
+                });
+            }
+        });
+    }
+}
+
 function setMode(mode) {
     currentMode = mode;
     document.getElementById('user-mode-btn').classList.toggle('active', mode === 'user');
     document.getElementById('business-mode-btn').classList.toggle('active', mode === 'business');
+    // Remove circle if switching away from business circle mode
+    if ((mode !== 'business' || businessRecommendMode !== 'circle') && window.businessCircle) {
+        map.removeLayer(window.businessCircle);
+        window.businessCircle = null;
+    }
+    // Load county boundaries if switching to business mode and not already loaded
+    if (mode === 'business' && !countyLayer) {
+        loadCountyBoundaries();
+    }
     updateLayersForMode();
+    const businessParamsCard = document.getElementById('business-params-card');
+    if (businessParamsCard) {
+        businessParamsCard.style.display = (mode === 'business') ? '' : 'none';
+    }
     // Hide nearby car washes list if not in user mode
     const card = document.getElementById('nearby-carwashes-card');
     if (card) card.style.display = (mode === 'user') ? '' : 'none';
@@ -583,6 +694,10 @@ function setMode(mode) {
     if (window.nearestCarwashMarker) {
         map.removeLayer(window.nearestCarwashMarker);
         window.nearestCarwashMarker = null;
+    }
+    // Reset business recommend mode to county when switching modes
+    if (mode === 'business') {
+        setBusinessRecommendMode(businessRecommendMode);
     }
 }
 

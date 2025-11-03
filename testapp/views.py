@@ -13,6 +13,9 @@ from django.http import HttpResponse
 from django.contrib.gis.db.models.functions import Distance
 from django.db.models import Count
 from django.contrib.gis.db.models import GeometryField
+from django.contrib.gis.geos import GEOSGeometry
+from django.contrib.gis.measure import D
+
 
 
 
@@ -158,6 +161,55 @@ def recommend_carwash_locations(request):
             if min_dist_km is not None and min_dist_km < min_distance_km:
                 continue
             # Is candidate close enough to a settlement? (itself is a settlement)
+            # Optionally, check for other settlements nearby
+            nearby_settlements = PopulationPoint.objects.filter(
+                point__distance_lte=(settlement.point, max_settlement_distance_km / 111)
+            ).count()
+            candidates.append({
+                'id': settlement.id,
+                'name': settlement.name,
+                'lat': settlement.point.y,
+                'lng': settlement.point.x,
+                'population': settlement.population,
+                'place': settlement.place,
+                'min_distance_to_carwash_km': min_dist_km,
+                'nearby_settlements': nearby_settlements
+            })
+        # Rank by distance from nearest car wash (descending), then by population (descending)
+        candidates = sorted(candidates, key=lambda x: (x['min_distance_to_carwash_km'] or 0, x['population'] or 0), reverse=True)
+        return JsonResponse({'recommendations': candidates[:10]})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
+    
+# New view: recommend car wash locations in a user-selected circle
+def recommend_carwash_locations_circle(request):
+    try:
+        lat = float(request.GET.get('lat'))
+        lng = float(request.GET.get('lng'))
+        radius_km = float(request.GET.get('radius_km', 10))
+        min_distance_km = float(request.GET.get('min_distance_km', 5))
+        max_settlement_distance_km = float(request.GET.get('max_settlement_distance_km', 10))
+        # Create circle geometry (buffer in degrees)
+        # Buffer expects degrees, so convert km to degrees (approx 1 deg = 111 km)
+        buffer_deg = radius_km / 111.0
+        center = Point(lng, lat, srid=4326)
+        circle = center.buffer(buffer_deg)
+        # Get all car washes in circle
+        carwashes = Location.objects.filter(point__within=circle)
+        carwash_points = [cw.point for cw in carwashes]
+        # Get all settlements in circle
+        settlements = PopulationPoint.objects.filter(point__within=circle)
+        candidates = []
+        for settlement in settlements:
+            # Distance to nearest car wash
+            if carwash_points:
+                distances = [settlement.point.distance(cw_point) for cw_point in carwash_points]
+                min_dist_km = min(distances) * 111  # Convert degrees to km (approx)
+            else:
+                min_dist_km = None
+            # Is candidate far enough from car washes?
+            if min_dist_km is not None and min_dist_km < min_distance_km:
+                continue
             # Optionally, check for other settlements nearby
             nearby_settlements = PopulationPoint.objects.filter(
                 point__distance_lte=(settlement.point, max_settlement_distance_km / 111)

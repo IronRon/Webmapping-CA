@@ -118,6 +118,50 @@
                     </div>
                 </div>
 
+                <div class="card mb-3" id="business-params-card" style="display:none;">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="fas fa-sliders-h me-2"></i>Business Mode Parameters</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-2">
+                            <label for="min-distance-km" class="form-label">Min Distance to Car Wash (km)</label>
+                            <input type="number" class="form-control form-control-sm" id="min-distance-km" value="5"
+                                min="0" step="0.1">
+                        </div>
+                        <div class="mb-2">
+                            <label for="max-settlement-distance-km" class="form-label">Max Settlement Distance
+                                (km)</label>
+                            <input type="number" class="form-control form-control-sm" id="max-settlement-distance-km"
+                                value="10" min="0" step="0.1">
+                        </div>
+                        <hr>
+                        <div class="mb-2">
+                            <label class="form-label">Recommendation Mode</label>
+                            <div class="btn-group w-100" role="group" id="business-mode-toggle-group">
+                                <button id="county-recommend-mode-btn" class="btn btn-outline-secondary btn-sm active">County Recommendation</button>
+                                <button id="circle-recommend-mode-btn" class="btn btn-outline-secondary btn-sm">Circle Recommendation</button>
+                            </div>
+                        </div>
+                        <div id="circle-recommend-params" style="display:none;">
+                            <div class="mb-2">
+                                <label for="circle-lat" class="form-label">Circle Center Latitude</label>
+                                <input type="number" class="form-control form-control-sm" id="circle-lat" placeholder="Latitude" step="any">
+                            </div>
+                            <div class="mb-2">
+                                <label for="circle-lng" class="form-label">Circle Center Longitude</label>
+                                <input type="number" class="form-control form-control-sm" id="circle-lng" placeholder="Longitude" step="any">
+                            </div>
+                            <div class="mb-2">
+                                <label for="circle-radius-km" class="form-label">Circle Radius (km)</label>
+                                <input type="number" class="form-control form-control-sm" id="circle-radius-km" placeholder="Radius in km" value="10" min="0" step="0.1">
+                            </div>
+                            <button class="btn btn-success btn-sm w-100" id="circle-recommend-btn">
+                                <i class="fas fa-search-location me-1"></i>Recommend in Circle
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Nearby Car Washes List -->
                 <div class="card mb-3" id="nearby-carwashes-card" style="display:none;">
                     <div class="card-header">
