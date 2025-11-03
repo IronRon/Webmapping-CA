@@ -158,11 +158,11 @@ function setupEventListeners() {
         }
     });
 
-    // Quick add form submission
-    document.getElementById('quick-add-form').addEventListener('submit', function (e) {
-        e.preventDefault();
-        addUserLocation();
-    });
+    // // Quick add form submission
+    // document.getElementById('quick-add-form').addEventListener('submit', function (e) {
+    //     e.preventDefault();
+    //     addUserLocation();
+    // });
 
     // Layer toggle controls
     document.getElementById('locations-layer').addEventListener('change', function (e) {
