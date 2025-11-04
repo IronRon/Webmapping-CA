@@ -175,6 +175,19 @@ CleanMyRide ensures robust data handling and validation throughout the applicati
 - **Spatial Data Imports:** Import scripts for car washes and counties require manual execution and may need adjustment for new datasets.
 - **Performance:** Polygons for irish counties takes lots of time to load
 
+## Screenshots
+
+Below are screenshots of the running application:
+
+### Desktop Views
+![Main App](screenshots/car_wash_app.png)
+![Business Mode](screenshots/business_mode.png)
+![Circle Recommendation Mode](screenshots/circle_mode.png)
+
+### Mobile Views
+![Mobile View 1](screenshots/mobile_v1.png)
+![Mobile View 2](screenshots/mobile_v2.png)
+
 ## Notes
 - The main app is `testapp`, which contains spatial models and views.
 - County heatmap and business analytics features use spatial aggregation (point-in-polygon queries) for accurate density analysis.
