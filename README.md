@@ -3,6 +3,8 @@
 
 CleanMyRide is a location-based web application that helps users find nearby car washes and assists business owners in identifying the best areas to open new ones. The project demonstrates practical use of spatial data analysis by combining geospatial queries, interactive mapping, and real-world business logic.
 
+![Car Wash App](screenshots/car_wash_app.png)
+
 ## Features
 
 - Interactive map visualization with Leaflet.js
