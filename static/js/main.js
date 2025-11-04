@@ -162,6 +162,21 @@ function setupEventListeners() {
     document.getElementById('reset-view').addEventListener('click', function () {
         resetMapView();
     });
+
+    document.getElementById('user-mode-btn').addEventListener('click', function () {
+        updateInstructions('user');
+    });
+    document.getElementById('business-mode-btn').addEventListener('click', function () {
+        updateInstructions('business');
+    });
+
+    document.getElementById('county-recommend-mode-btn').addEventListener('click', function () {
+       updateRecommendationInstructions('county');
+    });
+    document.getElementById('circle-recommend-mode-btn').addEventListener('click', function () {
+        updateRecommendationInstructions('circle');
+    });
+
 }
 
 /**
@@ -687,6 +702,25 @@ function setMode(mode) {
     // Reset business recommend mode to county when switching modes
     if (mode === 'business') {
         setBusinessRecommendMode(businessRecommendMode);
+    }
+}
+
+// --- Instructions UI Logic ---
+function updateInstructions(mode) {
+    const userInstructions = document.getElementById('instructions-user-mode');
+    const businessInstructions = document.getElementById('instructions-business-mode');
+    if (userInstructions && businessInstructions) {
+        userInstructions.style.display = (mode === 'user') ? '' : 'none';
+        businessInstructions.style.display = (mode === 'business') ? '' : 'none';
+    }
+}
+
+function updateRecommendationInstructions(mode) {
+    const countyInstructions = document.getElementById('county-recommendation-instructions');
+    const circleInstructions = document.getElementById('circle-recommendation-instructions');
+    if (countyInstructions && circleInstructions) {
+        countyInstructions.style.display = (mode === 'county') ? '' : 'none';
+        circleInstructions.style.display = (mode === 'circle') ? '' : 'none';
     }
 }
 

@@ -10,6 +10,7 @@
         <!-- Sidebar Panel -->
         <aside class="col-lg-3 col-md-4 bg-dark py-4" >
             <div class="p-3 sticky-top" style="top: 0;">
+
                 <!-- Header Branding -->
                 <div class="d-flex align-items-center mb-4">
                     <i class="fas fa-map-marked-alt fa-2x text-primary me-2"></i>
@@ -18,6 +19,32 @@
                         <small class="text-secondary">Explore Ireland's Car Washes</small>
                     </div>
                 </div>
+                
+                <!-- User Instructions -->
+                <div class="card mb-3 shadow-sm">
+                    <div class="card-header d-flex align-items-center">
+                        <i class="fas fa-info-circle text-info me-2"></i>
+                        <h6 class="mb-0">How to Use</h6>
+                    </div>
+                    <div class="card-body">
+                        <div id="instructions-user-mode">
+                            <strong>User Mode:</strong><br>
+                            <ul class="mb-2">
+                                <li>Click anywhere on the map to find the nearest car wash.</li>
+                                <li>See a list of the 10 closest car washes in the sidebar.</li>
+                            </ul>
+                        </div>
+                        <div id="instructions-business-mode" style="display:none;">
+                            <strong>Business Mode:</strong><br>
+                            <ul class="mb-2">
+                                <li>Counties are color-coded by car wash density: <span style="color:red;">Red</span> = more car washes, <span style="color:green;">Green</span> = fewer car washes.</li>
+                                <li>Click to get recommendations for new car wash locations.</li>
+                                <li>Switch between <b>County Recommendation</b> and <b>Circle Recommendation</b> using the toggle below.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
 
                 <!-- Map Layers Card -->
                 <div class="card mb-3 shadow-sm">
@@ -64,6 +91,21 @@
                             <div class="btn-group w-100" role="group" id="business-mode-toggle-group">
                                 <button id="county-recommend-mode-btn" class="btn btn-outline-secondary btn-sm active" title="Recommend by county">County Recommendation</button>
                                 <button id="circle-recommend-mode-btn" class="btn btn-outline-secondary btn-sm" title="Recommend by circle">Circle Recommendation</button>
+                            </div>
+                            <div class="mt-2" id="recommendation-mode-instructions">
+                                <div id="county-recommendation-instructions">
+                                    <strong>County Recommendation:</strong>
+                                    <ul class="mb-2">
+                                        <li>Click a county to analyze car wash coverage and get recommended sites based on population and distance from existing car washes.</li>
+                                    </ul>
+                                </div>
+                                <div id="circle-recommendation-instructions" style="display:none;">
+                                    <strong>Circle Recommendation:</strong>
+                                    <ul class="mb-2">
+                                        <li>Set the center and radius for a custom area on the map.</li>
+                                        <li>Get recommended locations for new car washes within the selected circle.</li>
+                                    </ul>
+                                </div>
                             </div>
                         </div>
                         <div id="circle-recommend-params" style="display:none;">
