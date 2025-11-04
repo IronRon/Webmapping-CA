@@ -167,6 +167,12 @@ CleanMyRide ensures robust data handling and validation throughout the applicati
 
 - **GeoJSON for Mapping:** For map layers, spatial data is serialized into GeoJSON format, making it easy to display on the frontend and work with mapping libraries.
 
+## Known Issues & Limitations
+
+- **Limited International Data:** Car wash locations are only imported for Ireland.
+- **Spatial Data Imports:** Import scripts for car washes and counties require manual execution and may need adjustment for new datasets.
+- **Performance:** Polygons for irish counties takes lots of time to load
+
 ## Notes
 - The main app is `testapp`, which contains spatial models and views.
 - County heatmap and business analytics features use spatial aggregation (point-in-polygon queries) for accurate density analysis.
