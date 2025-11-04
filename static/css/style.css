@@ -1,38 +1,49 @@
+
 /* Global Styles */
+/* Dark Mode Theme */
 :root {
-    --primary-color: #0d6efd;
-    --secondary-color: #6c757d;
-    --success-color: #198754;
-    --info-color: #0dcaf0;
-    --warning-color: #ffc107;
-    --danger-color: #dc3545;
+    --primary-color: #4f8cff;
+    --secondary-color: #b0b8c1;
+    --success-color: #3fcf8e;
+    --info-color: #3ec2e0;
+    --warning-color: #ffd166;
+    --danger-color: #ff4d6d;
+    --bg-dark: #181a20;
+    --bg-darker: #131417;
+    --bg-card: #23262e;
+    --text-light: #f3f6fa;
+    --text-muted: #b0b8c1;
+    --border-dark: #23262e;
 }
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f8f9fa;
+    background-color: var(--bg-dark);
+    color: var(--text-light);
 }
 
 /* Navigation */
 .navbar-brand {
     font-weight: 600;
+    color: var(--text-light);
 }
 
 .navbar-brand i {
-    color: #ffd700;
+    color: var(--warning-color);
 }
 
 /* Map Container */
 #map-container {
-    background-color: #e9ecef;
+    background-color: var(--bg-darker);
     border-radius: 0.5rem;
     overflow: hidden;
     margin: 1rem;
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.25);
 }
 
 #map {
     border-radius: 0.5rem;
+    background: var(--bg-dark);
 }
 
 /* Map Overlays */
@@ -42,7 +53,7 @@ body {
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(255, 255, 255, 0.9);
+    background-color: rgba(24, 26, 32, 0.92);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -65,33 +76,67 @@ body {
 
 .card {
     border: none;
-    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    background: var(--bg-card);
+    color: var(--text-light);
+    box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.18);
 }
 
 .card-header {
-    background-color: #f8f9fa;
-    border-bottom: 1px solid #dee2e6;
+    background-color: var(--bg-darker);
+    border-bottom: 1px solid var(--border-dark);
+    color: var(--text-light);
 }
 
 /* Form Enhancements */
+
+.form-control {
+    background: var(--bg-dark);
+    color: var(--text-light);
+    border: 1px solid var(--border-dark);
+}
 .form-control:focus {
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+    box-shadow: 0 0 0 0.2rem rgba(79, 140, 255, 0.25);
+    background: var(--bg-darker);
+    color: var(--text-light);
 }
+
 
 .btn {
     font-weight: 500;
     transition: all 0.2s ease-in-out;
+    background: var(--bg-card);
+    color: var(--text-light);
+    border: 1px solid var(--border-dark);
 }
-
 .btn:hover {
     transform: translateY(-1px);
-    box-shadow: 0 0.2rem 0.4rem rgba(0, 0, 0, 0.1);
+    box-shadow: 0 0.2rem 0.4rem rgba(79,140,255,0.12);
+    background: var(--primary-color);
+    color: #fff;
 }
 
 /* Leaflet Popup Customization */
+/* Modern dark Leaflet popup */
 .leaflet-popup-content {
     font-family: inherit;
+    color: var(--text-light);
+    background: var(--bg-card);
+    border-radius: 1rem;
+    box-shadow: 0 0.5rem 1.5rem rgba(0,0,0,0.35);
+    padding: 1.1rem 1.3rem;
+    margin: 0;
+}
+
+.leaflet-popup-content-wrapper {
+    background: var(--bg-card);
+    color: var(--text-light);
+    border-radius: 1rem;
+    box-shadow: 0 0.5rem 1.5rem rgba(0,0,0,0.35);
+}
+
+.leaflet-popup-tip {
+    background: var(--bg-card);
 }
 
 .custom-popup {
@@ -106,8 +151,8 @@ body {
 .custom-popup .coordinates {
     font-family: 'Courier New', monospace;
     font-size: 0.85em;
-    color: var(--secondary-color);
-    background-color: #f8f9fa;
+    color: var(--info-color);
+    background-color: var(--bg-darker);
     padding: 0.25rem;
     border-radius: 0.25rem;
     margin: 0.5rem 0;
@@ -117,6 +162,24 @@ body {
 .spinner-border {
     width: 3rem;
     height: 3rem;
+    color: var(--primary-color) !important;
+}
+
+/* Dark theme for nearby car washes list */
+.bg-dark-theme {
+    background: var(--bg-card) !important;
+    color: var(--text-light) !important;
+    border: 1px solid var(--border-dark) !important;
+}
+
+.badge-dark-theme {
+    background: var(--primary-color) !important;
+    color: #fff !important;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    padding: 0.4em 0.8em;
+    font-size: 0.95em;
+    box-shadow: 0 0.1rem 0.3rem rgba(79,140,255,0.15);
 }
 
 /* Responsive Design */
@@ -126,17 +189,16 @@ body {
         left: 5px;
         right: 5px;
     }
-    
     .map-info-box small {
         font-size: 0.75rem;
     }
-    
     #map-container {
         margin: 0.5rem;
+        background: var(--bg-darker);
     }
-    
     #map {
         height: 50vh !important;
+        background: var(--bg-dark);
     }
 }
 

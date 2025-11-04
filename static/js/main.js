@@ -20,8 +20,8 @@ document.addEventListener('DOMContentLoaded', function () {
  */
 function initializeMap() {
     try {
-        // Create map instance centered on Europe
-        map = L.map('map').setView([54.0, 15.0], 4);
+        // Create map instance centered on Ireland
+        map = L.map('map').setView([53.4, -7.7], 7);
 
         // Add OpenStreetMap tile layer
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -156,21 +156,6 @@ function setupEventListeners() {
                     showNearbyCarwashesList([]);
                 });
         }
-    });
-
-    // // Quick add form submission
-    // document.getElementById('quick-add-form').addEventListener('submit', function (e) {
-    //     e.preventDefault();
-    //     addUserLocation();
-    // });
-
-    // Layer toggle controls
-    document.getElementById('locations-layer').addEventListener('change', function (e) {
-        toggleSampleLocations(e.target.checked);
-    });
-
-    document.getElementById('user-locations').addEventListener('change', function (e) {
-        toggleUserLocations(e.target.checked);
     });
 
     // Reset view button
@@ -555,19 +540,19 @@ function showNearbyCarwashesList(carwashes) {
     }
     list.innerHTML = '';
     if (!carwashes || carwashes.length === 0) {
-        list.innerHTML = '<li class="list-group-item text-muted">No car washes found nearby.</li>';
+        list.innerHTML = '<li class="list-group-item text-muted bg-dark-theme">No car washes found nearby.</li>';
         card.style.display = '';
         return;
     }
     carwashes.forEach((cw, idx) => {
         const li = document.createElement('li');
-        li.className = 'list-group-item d-flex justify-content-between align-items-center';
+        li.className = 'list-group-item d-flex justify-content-between align-items-center bg-dark-theme';
         li.innerHTML = `
             <div>
-                <b>${cw.name || 'Unnamed'}</b><br>
-                <small>${cw.address}</small>
+                <b style="color:var(--primary-color);">${cw.name || 'Unnamed'}</b><br>
+                <small style="color:var(--text-muted);">${cw.address}</small>
             </div>
-            <span class="badge bg-primary">${cw.distance.toFixed(2)} km</span>
+            <span class="badge badge-dark-theme">${cw.distance.toFixed(2)} km</span>
         `;
         li.style.cursor = 'pointer';
         li.onclick = function () {

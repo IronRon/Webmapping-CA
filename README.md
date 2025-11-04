@@ -4,6 +4,7 @@
 CleanMyRide is a location-based web application that helps users find nearby car washes and assists business owners in identifying the best areas to open new ones. The project demonstrates practical use of spatial data analysis by combining geospatial queries, interactive mapping, and real-world business logic.
 
 ## Features
+
 - Interactive map visualization with Leaflet.js
 - Car wash locations imported from OpenStreetMap for Ireland and the United States
 - Irish county boundaries for spatial analysis
@@ -133,6 +134,38 @@ These results demonstrate significant speedup for proximity and intersection que
    - The best locations are ranked by distance from the nearest car wash (favoring underserved areas) and by population (favoring larger settlements).
    - The top recommended sites are returned to the frontend and visualized on the map.
    - All spatial queries use PostGIS and GeoDjango for efficient geospatial analysis.
+
+### Data Handling & Validation
+
+CleanMyRide ensures robust data handling and validation throughout the application:
+
+- **Error Handling:** All API views use try/except blocks to catch errors and return clear JSON error messages. For example, if a user provides invalid coordinates, the backend responds with a helpful error instead of crashing.
+
+   ```python
+   try:
+         lat = float(request.GET.get('lat'))
+         lng = float(request.GET.get('lng'))
+         # ...spatial query...
+   except Exception as e:
+         return JsonResponse({'error': str(e)}, status=400)
+   ```
+
+- **Input Validation:** User inputs (like latitude, longitude, and search parameters) are validated for correct types and ranges before processing. This prevents invalid queries and ensures reliable results.
+
+- **Security Practices:** Only safe fields are exposed in API responses using serializers, and sensitive data is never returned to the frontend. All database queries use Django ORM, protecting against SQL injection.
+
+- **Data Serialization:** The app uses Django REST Framework serializers to convert model data into clean, structured JSON for API responses. For example, the `LocationSerializer` ensures only relevant fields (like `id`, `name`, `lat`, `lng`) are sent to the frontend.
+
+   ```python
+   class LocationSerializer(serializers.ModelSerializer):
+         lat = serializers.SerializerMethodField()
+         lng = serializers.SerializerMethodField()
+         class Meta:
+               model = Location
+               fields = ['id', 'name', 'lat', 'lng']
+   ```
+
+- **GeoJSON for Mapping:** For map layers, spatial data is serialized into GeoJSON format, making it easy to display on the frontend and work with mapping libraries.
 
 ## Notes
 - The main app is `testapp`, which contains spatial models and views.

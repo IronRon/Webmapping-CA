@@ -1,3 +1,4 @@
+
 {% extends 'base.html' %}
 {% load static %}
 
@@ -7,128 +8,86 @@
 <div class="container-fluid">
     <div class="row">
         <!-- Sidebar Panel -->
-        <div class="col-lg-3 col-md-4 bg-light py-4">
-            <div class="p-3">
-                <h4 class="text-primary mb-3">
-                    <i class="fas fa-map-signs me-2"></i>
-                    Hello Map
-                </h4>
-
-                <!-- <div class="card mb-3">
-                    <div class="card-header">
-                        <h6 class="mb-0">
-                            <i class="fas fa-info-circle me-2"></i>
-                            Environment Status
-                        </h6>
+        <aside class="col-lg-3 col-md-4 bg-dark py-4" >
+            <div class="p-3 sticky-top" style="top: 0;">
+                <!-- Header Branding -->
+                <div class="d-flex align-items-center mb-4">
+                    <i class="fas fa-map-marked-alt fa-2x text-primary me-2"></i>
+                    <div>
+                        <h3 class="mb-0 fw-bold text-primary">Web Mapping Platform</h3>
+                        <small class="text-secondary">Explore Ireland's Car Washes</small>
                     </div>
+                </div>
+
+                <!-- Map Layers Card -->
+                <div class="card mb-3 shadow-sm">
                     <div class="card-body">
-                        <div class="status-item mb-2">
-                            <span class="badge bg-success me-2">✓</span>
-                            Django: {{ django_version }}
-                        </div>
-                        <div class="status-item mb-2">
-                            <span class="badge bg-success me-2">✓</span>
-                            PostGIS: {{ postgis_version }}
-                        </div>
-                        <div class="status-item mb-2">
-                            <span class="badge bg-success me-2">✓</span>
-                            Leaflet: 1.9.4
-                        </div>
-                        <div class="status-item">
-                            <span class="badge bg-primary me-2">📍</span>
-                            Locations: {{ location_count }}
-                        </div>
-                    </div>
-                </div> -->
-
-
-                <div class="card">
-                    <div class="card-header">
-                        <h6 class="mb-0">
-                            <i class="fas fa-layer-group me-2"></i>
-                            Map Layers
-                        </h6>
-                    </div>
-                    <div class="card-body">
-                        <div class="form-check mb-2">
-                            <input class="form-check-input" type="checkbox" id="locations-layer" checked>
-                            <label class="form-check-label" for="locations-layer">
-                                <i class="fas fa-map-pin text-primary me-1"></i>
-                                Sample Locations
-                            </label>
-                        </div>
-                        <div class="form-check mb-2">
-                            <input class="form-check-input" type="checkbox" id="user-locations" checked>
-                            <label class="form-check-label" for="user-locations">
-                                <i class="fas fa-plus-circle text-success me-1"></i>
-                                User Added Locations
-                            </label>
-                        </div>
-                        <hr>
-                        <button class="btn btn-outline-secondary btn-sm w-100" id="reset-view">
+                        <button class="btn btn-outline-secondary btn-sm w-100" id="reset-view" title="Reset map to default view">
                             <i class="fas fa-home me-1"></i>
                             Reset Map View
                         </button>
                     </div>
                 </div>
 
-                <div class="card mb-3">
-                    <div class="card-header">
-                        <h6 class="mb-0"><i class="fas fa-exchange-alt me-2"></i>Mode</h6>
+                <!-- Mode Selection Card -->
+                <div class="card mb-3 shadow-sm">
+                    <div class="card-header d-flex align-items-center">
+                        <i class="fas fa-exchange-alt text-warning me-2"></i>
+                        <h6 class="mb-0">Mode</h6>
                     </div>
                     <div class="card-body">
                         <div class="btn-group w-100" role="group">
-                            <button id="user-mode-btn" class="btn btn-outline-primary btn-sm active">User Mode</button>
-                            <button id="business-mode-btn" class="btn btn-outline-success btn-sm">Business Mode</button>
+                            <button id="user-mode-btn" class="btn btn-outline-primary btn-sm active" title="User mode: find car washes near you">User Mode</button>
+                            <button id="business-mode-btn" class="btn btn-outline-success btn-sm" title="Business mode: analyze locations for new car washes">Business Mode</button>
                         </div>
                     </div>
                 </div>
 
-                <div class="card mb-3" id="business-params-card" style="display:none; max-height: 320px; overflow-y: auto;">
-                    <div class="card-header">
-                        <h6 class="mb-0"><i class="fas fa-sliders-h me-2"></i>Business Mode Parameters</h6>
+                <!-- Business Mode Parameters -->
+                <div class="card mb-3 shadow-sm" id="business-params-card" style="display:none; max-height: 320px; overflow-y: auto;">
+                    <div class="card-header d-flex align-items-center">
+                        <i class="fas fa-sliders-h text-secondary me-2"></i>
+                        <h6 class="mb-0">Business Mode Parameters</h6>
                     </div>
                     <div class="card-body">
                         <div class="mb-2">
                             <label for="min-distance-km" class="form-label">Min Distance to Car Wash (km)</label>
-                            <input type="number" class="form-control form-control-sm" id="min-distance-km" value="5"
-                                min="0" step="0.1">
+                            <input type="number" class="form-control form-control-sm" id="min-distance-km" value="5" min="0" step="0.1" title="Minimum allowed distance to nearest car wash">
                         </div>
                         <div class="mb-2">
-                            <label for="max-settlement-distance-km" class="form-label">Max Settlement Distance
-                                (km)</label>
-                            <input type="number" class="form-control form-control-sm" id="max-settlement-distance-km"
-                                value="10" min="0" step="0.1">
+                            <label for="max-settlement-distance-km" class="form-label">Max Settlement Distance (km)</label>
+                            <input type="number" class="form-control form-control-sm" id="max-settlement-distance-km" value="10" min="0" step="0.1" title="Maximum allowed distance to settlements">
                         </div>
                         <hr>
                         <div class="mb-2">
                             <label class="form-label">Recommendation Mode</label>
                             <div class="btn-group w-100" role="group" id="business-mode-toggle-group">
-                                <button id="county-recommend-mode-btn" class="btn btn-outline-secondary btn-sm active">County Recommendation</button>
-                                <button id="circle-recommend-mode-btn" class="btn btn-outline-secondary btn-sm">Circle Recommendation</button>
+                                <button id="county-recommend-mode-btn" class="btn btn-outline-secondary btn-sm active" title="Recommend by county">County Recommendation</button>
+                                <button id="circle-recommend-mode-btn" class="btn btn-outline-secondary btn-sm" title="Recommend by circle">Circle Recommendation</button>
                             </div>
                         </div>
                         <div id="circle-recommend-params" style="display:none;">
                             <div class="mb-2">
                                 <label for="circle-lat" class="form-label">Circle Center Latitude</label>
-                                <input type="number" class="form-control form-control-sm" id="circle-lat" placeholder="Latitude" step="any">
+                                <input type="number" class="form-control form-control-sm" id="circle-lat" placeholder="Latitude" step="any" title="Latitude of circle center">
                             </div>
                             <div class="mb-2">
                                 <label for="circle-lng" class="form-label">Circle Center Longitude</label>
-                                <input type="number" class="form-control form-control-sm" id="circle-lng" placeholder="Longitude" step="any">
+                                <input type="number" class="form-control form-control-sm" id="circle-lng" placeholder="Longitude" step="any" title="Longitude of circle center">
                             </div>
                             <div class="mb-2">
                                 <label for="circle-radius-km" class="form-label">Circle Radius (km)</label>
-                                <input type="number" class="form-control form-control-sm" id="circle-radius-km" placeholder="Radius in km" value="10" min="0" step="0.1">
+                                <input type="number" class="form-control form-control-sm" id="circle-radius-km" placeholder="Radius in km" value="10" min="0" step="0.1" title="Radius of recommendation circle">
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Nearby Car Washes List -->
-                <div class="card mb-3" id="nearby-carwashes-card" style="display:none;">
-                    <div class="card-header">
-                        <h6 class="mb-0"><i class="fas fa-list-ul me-2"></i>Nearby Car Washes</h6>
+                <div class="card mb-3 shadow-sm" id="nearby-carwashes-card" style="display:none;">
+                    <div class="card-header d-flex align-items-center">
+                        <i class="fas fa-list-ul text-primary me-2"></i>
+                        <h6 class="mb-0">Nearby Car Washes</h6>
                     </div>
                     <div class="card-body p-0">
                         <ul class="list-group list-group-flush" id="nearby-carwashes-list" style="max-height: 260px; overflow-y: auto;">
@@ -137,10 +96,10 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </aside>
 
         <!-- Map Container -->
-        <div class="col-lg-9 col-md-8">
+        <main class="col-lg-9 col-md-8">
             <div id="map-container" class="position-relative">
                 <div id="map" style="height: calc(100vh - 120px);"></div>
 
@@ -164,7 +123,7 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </main>
     </div>
 </div>
 {% endblock %}
@@ -173,8 +132,8 @@
 <script>
     // Pass Django context to JavaScript
     window.DJANGO_CONTEXT = {
-        locationCount: {{ location_count }},
-    apiBaseUrl: '/api/',
+        locationCount: "{{ location_count }}",
+        apiBaseUrl: '/api/',
         csrfToken: '{{ csrf_token }}'
     };
 </script>
