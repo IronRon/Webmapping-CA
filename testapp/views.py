@@ -99,16 +99,19 @@ def nearby_carwashes(request):
 
 # New view: car wash counts per county for heatmap
 def county_wash_counts(request):
-    # For each county, count car washes whose point is within the county polygon
-    counts = []
-    for county in IrishCounty.objects.all():
-        wash_count = Location.objects.filter(point__within=county.geom).count()
-        counts.append({
-            'id': county.id,
-            'name_en': county.name_en,
-            'wash_count': wash_count
-        })
-    return JsonResponse({'counts': counts})
+    try:
+        # For each county, count car washes whose point is within the county polygon
+        counts = []
+        for county in IrishCounty.objects.all():
+            wash_count = Location.objects.filter(point__within=county.geom).count()
+            counts.append({
+                'id': county.id,
+                'name_en': county.name_en,
+                'wash_count': wash_count
+            })
+        return JsonResponse({'counts': counts})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
 
 # New view: nearby populated places sorted by distance
 def nearby_populated_places(request):
