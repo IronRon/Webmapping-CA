@@ -4,7 +4,19 @@
 {% block title %}Hello Map - Web Mapping Platform{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
+
+{% if messages %}
+<div class="container mt-3" style="z-index: 9999; position: fixed;">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show position-fixed" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="container-fluid" style="z-index: 0;">
     <div class="row">
         <!-- Sidebar Panel -->
         <aside class="col-lg-3 col-md-4 bg-dark py-4">
@@ -202,11 +214,12 @@
         </main>
     </div>
 </div>
+
 {% endblock %}
 
 {% block extra_js %}
 <script>
-    // Pass Django context to JavaScript
+    window.USER_LOGGED_IN = {{ user.is_authenticated|yesno:"true,false" }};
     window.DJANGO_CONTEXT = {
         locationCount: "{{ location_count }}",
         apiBaseUrl: '/api/',
@@ -214,4 +227,5 @@
     };
 </script>
 <script src="{% static 'js/hello_map.js' %}"></script>
+
 {% endblock %}

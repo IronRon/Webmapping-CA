@@ -7,6 +7,9 @@ let countyLayer = null;
 // Initialize application when page loads
 document.addEventListener('DOMContentLoaded', function () {
     console.log('🗺️ Initializing Hello Map application...');
+    if (!window.USER_LOGGED_IN) {
+        document.getElementById('business-mode-btn').disabled = true;
+    }
     initializeMap();
     setupEventListeners();
     loadSampleData();
@@ -630,8 +633,13 @@ document.getElementById('user-mode-btn').addEventListener('click', function () {
     setMode('user');
 });
 document.getElementById('business-mode-btn').addEventListener('click', function () {
+    if (!window.USER_LOGGED_IN) {
+        showAlert('warning', 'You must be logged in to access Business Mode.');
+        return;
+    }
     setMode('business');
 });
+
 
 // --- Business Recommendation Mode Toggle Logic ---
 let businessRecommendMode = 'county'; // 'county', 'circle', or 'polygon'
@@ -873,9 +881,9 @@ function sendPolygonToServer(geojson) {
                 Settlement: ${data.name || 'Unknown'}<br>
                 Population: ${data.population ?? 'Unknown'}<br>
                 Distance to nearest car wash: ${data.min_distance_to_carwash_km
-                                ? data.min_distance_to_carwash_km.toFixed(2) + ' km'
-                                : 'N/A'
-                            }<br>
+                    ? data.min_distance_to_carwash_km.toFixed(2) + ' km'
+                    : 'N/A'
+                }<br>
                 Nearby settlements: ${data.nearby_settlements ?? 'N/A'}<br>
                 Reason: ${data.reason}
             `;

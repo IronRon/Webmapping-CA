@@ -15,6 +15,14 @@ from django.db.models import Count
 from django.contrib.gis.db.models import GeometryField
 from django.contrib.gis.geos import GEOSGeometry
 from django.contrib.gis.measure import D
+from django.shortcuts import redirect
+from django.contrib.auth import login, logout
+from django.contrib.auth.views import LoginView
+from django.contrib import messages
+from django.urls import reverse_lazy
+from django.views.generic import CreateView
+from django.contrib.auth.decorators import login_required
+from .forms import LoginForm, SignUpForm
 
 def hello_map(request):
     """Main map view with environment information"""
@@ -95,6 +103,7 @@ def nearby_carwashes(request):
         return JsonResponse({'error': str(e)}, status=400)
 
 # New view: car wash counts per county for heatmap
+@login_required
 def county_wash_counts(request):
     try:
         # For each county, count car washes whose point is within the county polygon
@@ -111,6 +120,7 @@ def county_wash_counts(request):
         return JsonResponse({'error': str(e)}, status=400)
 
 # New view: nearby populated places sorted by distance
+@login_required
 def nearby_populated_places(request):
     try:
         lat = float(request.GET.get('lat'))
@@ -136,6 +146,7 @@ def nearby_populated_places(request):
         return JsonResponse({'error': str(e)}, status=400)
 
 # New view: recommend car wash locations in a county
+@login_required
 def recommend_carwash_locations(request):
     try:
         county_id = request.GET.get('county_id')
@@ -182,6 +193,7 @@ def recommend_carwash_locations(request):
         return JsonResponse({'error': str(e)}, status=400)
     
 # New view: recommend car wash locations in a user-selected circle
+@login_required
 def recommend_carwash_locations_circle(request):
     try:
         lat = float(request.GET.get('lat'))
@@ -230,7 +242,7 @@ def recommend_carwash_locations_circle(request):
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)
 
-# @business_required
+@login_required
 @csrf_exempt
 def recommend_carwash_locations_polygon(request):
     data = json.loads(request.body)
@@ -298,3 +310,51 @@ def recommend_carwash_locations_polygon(request):
             "nearby_settlements": settlements.count(),
             "reason": "No suitable settlement found, using polygon centroid"
         })
+
+
+class CustomLoginView(LoginView):
+    """Custom login view using our custom form."""
+    form_class = LoginForm
+    template_name = 'authentication/login.html'
+    redirect_authenticated_user = True
+    success_url = reverse_lazy('hello_map')
+
+    def form_valid(self, form):
+        """Add success message on login."""
+        user = form.get_user()
+        login(self.request, user)
+        messages.success(self.request, f'Welcome back, {form.get_user().username}!')
+        return redirect('/')
+
+    def form_invalid(self, form):
+        """Add error message on login failure."""
+        messages.error(self.request, 'Invalid username or password.')
+        return redirect('/')
+
+
+class SignUpView(CreateView):
+    """User registration view."""
+    form_class = SignUpForm
+    template_name = 'authentication/signup.html'
+    success_url = reverse_lazy('login')
+
+    def form_valid(self, form):
+        """Auto-login after successful registration."""
+        response = super().form_valid(form)
+        user = form.save()
+        login(self.request, user)
+        messages.success(self.request, f'Welcome, {user.username}! Your account has been created.')
+        return redirect('/')
+
+    def form_invalid(self, form):
+        """Add error message on registration failure."""
+        messages.error(self.request, 'Please correct the errors below.')
+        return super().form_invalid(form)
+
+
+def custom_logout_view(request):
+    """Custom logout view with success message."""
+    username = request.user.username if request.user.is_authenticated else 'User'
+    logout(request)
+    messages.success(request, f'Goodbye, {username}! You have been logged out.')
+    return redirect('/')

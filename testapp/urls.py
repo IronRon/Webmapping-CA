@@ -12,5 +12,8 @@ urlpatterns = [
     path('recommend_carwash_locations/', views.recommend_carwash_locations, name='recommend_carwash_locations'),
     path('recommend_carwash_locations_circle/', views.recommend_carwash_locations_circle, name='recommend_carwash_locations_circle'),
     path('recommend/polygon/', views.recommend_carwash_locations_polygon, name='recommend_polygon'),
+    path('login/', views.CustomLoginView.as_view(), name='login'),
+    path('logout/', views.custom_logout_view, name='logout'),
+    path('signup/', views.SignUpView.as_view(), name='signup'),
 
 ]
