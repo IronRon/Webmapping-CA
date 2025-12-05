@@ -16,9 +16,6 @@ from django.contrib.gis.db.models import GeometryField
 from django.contrib.gis.geos import GEOSGeometry
 from django.contrib.gis.measure import D
 
-
-
-
 def hello_map(request):
     """Main map view with environment information"""
     django_version = django.get_version()
@@ -232,3 +229,72 @@ def recommend_carwash_locations_circle(request):
         return JsonResponse({'recommendations': candidates[:10]})
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)
+
+# @business_required
+@csrf_exempt
+def recommend_carwash_locations_polygon(request):
+    data = json.loads(request.body)
+
+    # Read polygon from geojson
+    polygon = GEOSGeometry(json.dumps(data["geometry"]), srid=4326)
+
+    min_distance_km = float(data.get("min_distance_km", 5))
+
+    # Get car washes inside polygon
+    carwashes = Location.objects.filter(point__within=polygon)
+    carwash_pts = [cw.point for cw in carwashes]
+
+    # Get settlements inside polygon
+    settlements = PopulationPoint.objects.filter(point__within=polygon)
+
+    if not settlements:
+        centroid = polygon.centroid
+        return JsonResponse({
+            "lat": centroid.y,
+            "lng": centroid.x,
+            "name": "Polygon Centroid",
+            "population": None,
+            "min_distance_to_carwash_km": None,
+            "nearby_settlements": settlements.count(),
+            "reason": "No settlements inside polygon, using centroid"
+        })
+
+    best = None
+    best_score = -1
+
+    for s in settlements:
+        if carwash_pts:
+            dist_km = min([s.point.distance(cw) * 111 for cw in carwash_pts])
+            if dist_km < min_distance_km:
+                continue
+        else:
+            dist_km = None
+
+        score = dist_km or 1000  # simple scoring
+
+        if score > best_score:
+            best = s
+            best_score = score
+
+    if best:
+        return JsonResponse({
+            "lat": best.point.y,
+            "lng": best.point.x,
+            "name": getattr(best, "name", "Unknown"),
+            "population": getattr(best, "population", None),
+            "min_distance_to_carwash_km": float(dist_km) if dist_km is not None else None,
+            "nearby_settlements": settlements.count(),
+            "reason": "Best settlement inside your polygon"
+        })
+
+    else:
+        centroid = polygon.centroid
+        return JsonResponse({
+            "lat": centroid.y,
+            "lng": centroid.x,
+            "name": "Polygon Centroid",
+            "population": None,
+            "min_distance_to_carwash_km": None,
+            "nearby_settlements": settlements.count(),
+            "reason": "No suitable settlement found, using polygon centroid"
+        })

@@ -56,6 +56,11 @@ function setupEventListeners() {
         // Show temporary marker
         showTemporaryMarker(e.latlng);
 
+        if (polygonMode && currentMode === 'business') {
+            addPolygonPoint(e.latlng);
+            return;   // Do not trigger other business logic
+        }
+
         if (currentMode === 'business' && businessRecommendMode === 'circle') {
             // Set sidebar lat/lng fields
             document.getElementById('circle-lat').value = lat;
@@ -171,10 +176,13 @@ function setupEventListeners() {
     });
 
     document.getElementById('county-recommend-mode-btn').addEventListener('click', function () {
-       updateRecommendationInstructions('county');
+        updateRecommendationInstructions('county');
     });
     document.getElementById('circle-recommend-mode-btn').addEventListener('click', function () {
         updateRecommendationInstructions('circle');
+    });
+    document.getElementById('polygon-recommend-mode-btn').addEventListener('click', function () {
+        updateRecommendationInstructions('polygon');
     });
 
 }
@@ -505,13 +513,9 @@ function loadCountyBoundaries() {
                             if (props.name_ga) popupContent += `<b>Irish Name:</b> ${props.name_ga}<br>`;
                             if (props.alt_name) popupContent += `<b>Alt Name:</b> ${props.alt_name}<br>`;
                             if (props.area) popupContent += `<b>Area:</b> ${props.area}<br>`;
-                            layer.bindPopup(popupContent);
+                            // layer.bindPopup(popupContent);
                             // Add click event for business mode recommendation
-                            layer.on('click', function () {
-                                if (currentMode === 'business') {
-                                    showRecommendedCarwashLocation(feature.id || feature.properties.id || feature.properties.osm_id);
-                                }
-                            });
+                            layer.on('click', handleCountyClick);
                         }
                     });
                     countyLayer.addTo(map);
@@ -630,7 +634,7 @@ document.getElementById('business-mode-btn').addEventListener('click', function 
 });
 
 // --- Business Recommendation Mode Toggle Logic ---
-let businessRecommendMode = 'county'; // 'county' or 'circle'
+let businessRecommendMode = 'county'; // 'county', 'circle', or 'polygon'
 
 document.getElementById('county-recommend-mode-btn').addEventListener('click', function () {
     setBusinessRecommendMode('county');
@@ -638,33 +642,56 @@ document.getElementById('county-recommend-mode-btn').addEventListener('click', f
 document.getElementById('circle-recommend-mode-btn').addEventListener('click', function () {
     setBusinessRecommendMode('circle');
 });
+document.getElementById('polygon-recommend-mode-btn').addEventListener('click', function () {
+    setBusinessRecommendMode('polygon');
+});
+
 
 function setBusinessRecommendMode(mode) {
     businessRecommendMode = mode;
     document.getElementById('county-recommend-mode-btn').classList.toggle('active', mode === 'county');
     document.getElementById('circle-recommend-mode-btn').classList.toggle('active', mode === 'circle');
-    // Show/hide circle params
     document.getElementById('circle-recommend-params').style.display = (mode === 'circle') ? '' : 'none';
+
     // Remove circle if toggling away from circle mode
     if (mode !== 'circle' && window.businessCircle) {
         map.removeLayer(window.businessCircle);
         window.businessCircle = null;
     }
-    // Disable county layer interaction in circle mode
+    // Disable polygon mode if not selected
+    if (mode !== 'polygon') {
+        polygonMode = false;
+        clearPolygonDrawing();
+    } else {
+        polygonMode = true;
+    }
+
     if (countyLayer) {
-        countyLayer.eachLayer(function (layer) {
-            if (mode === 'circle') {
-                layer.off('click');
+        countyLayer.eachLayer(layer => {
+            if (mode === 'county') {
+                layer.options.interactive = true;
+                layer.setStyle({ interactive: true });
+                layer.on('click', handleCountyClick);
             } else {
-                layer.on('click', function () {
-                    if (currentMode === 'business' && businessRecommendMode === 'county') {
-                        showRecommendedCarwashLocation(layer.feature.id || layer.feature.properties.id || layer.feature.properties.osm_id);
-                    }
-                });
+                layer.options.interactive = false;
+                layer.setStyle({ interactive: false });
+                layer.off('click', handleCountyClick);
             }
         });
     }
+
 }
+
+function handleCountyClick(e) {
+    if (currentMode === 'business' && businessRecommendMode === 'county') {
+        const feature = e.target.feature;
+        const id = feature.id || feature.properties.id || feature.properties.osm_id;
+        showRecommendedCarwashLocation(id);
+    } else {
+        console.log('County click ignored - not in business county recommend mode');
+    }
+}
+
 
 function setMode(mode) {
     currentMode = mode;
@@ -718,9 +745,20 @@ function updateInstructions(mode) {
 function updateRecommendationInstructions(mode) {
     const countyInstructions = document.getElementById('county-recommendation-instructions');
     const circleInstructions = document.getElementById('circle-recommendation-instructions');
-    if (countyInstructions && circleInstructions) {
+    const polygonInstructions = document.getElementById('polygon-recommendation-instructions');
+    if (countyInstructions && circleInstructions && polygonInstructions) {
         countyInstructions.style.display = (mode === 'county') ? '' : 'none';
         circleInstructions.style.display = (mode === 'circle') ? '' : 'none';
+        polygonInstructions.style.display = (mode === 'polygon') ? '' : 'none';
+    }
+    if (mode === 'polygon') {
+        polygonMode = true;
+        polygonPoints = [];
+        clearPolygonDrawing();
+        document.getElementById('finish-polygon-btn').disabled = true;
+    } else {
+        polygonMode = false;
+        clearPolygonDrawing();
     }
 }
 
@@ -734,3 +772,120 @@ style.textContent = `
     }
 `;
 document.head.appendChild(style);
+
+let polygonMode = false;
+let polygonPoints = [];
+let polygonMarkers = [];
+let polygonLayer = null;
+
+function addPolygonPoint(latlng) {
+    polygonPoints.push([latlng.lng, latlng.lat]);
+
+    // Place a small marker
+    const m = L.circleMarker(latlng, {
+        radius: 4,
+        color: "red",
+        fillColor: "red",
+        fillOpacity: 1
+    }).addTo(map);
+
+    polygonMarkers.push(m);
+
+    if (polygonPoints.length >= 3) {
+        document.getElementById('finish-polygon-btn').disabled = false;
+    }
+}
+
+function clearPolygonDrawing() {
+    polygonPoints = [];
+
+    polygonMarkers.forEach(m => map.removeLayer(m));
+    polygonMarkers = [];
+
+    if (polygonLayer) {
+        map.removeLayer(polygonLayer);
+        polygonLayer = null;
+    }
+}
+document.getElementById("clear-polygon-btn").onclick = clearPolygonDrawing;
+document.getElementById("finish-polygon-btn").onclick = function () {
+    if (polygonPoints.length < 3) return;
+
+    // Create polygon in Leaflet
+    polygonLayer = L.polygon(polygonPoints.map(p => [p[1], p[0]]), {
+        color: "blue",
+        fillOpacity: 0.1
+    }).addTo(map);
+
+    // Convert to GeoJSON
+    const geojson = polygonLayer.toGeoJSON();
+
+    sendPolygonToServer(geojson);  // Call backend
+
+    map.fitBounds(polygonLayer.getBounds());
+};
+
+function sendPolygonToServer(geojson) {
+    const minDistanceKm = parseFloat(document.getElementById('min-distance-km').value) || 5;
+
+    geojson.min_distance_km = minDistanceKm;
+
+    fetch("/recommend/polygon/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(geojson)
+    })
+        .then(r => r.json())
+        .then(data => {
+            if (data.error) {
+                showAlert('danger', data.error);
+                return;
+            }
+
+            // Place recommended marker
+            // Clear previous recommended marker if any
+            if (window.recommendedCarwashMarker) {
+                map.removeLayer(window.recommendedCarwashMarker);
+            }
+
+            // Custom icon (same as county/circle)
+            const icon = L.divIcon({
+                className: 'recommended-marker',
+                html: `
+                <div style="
+                    background-color: #ff5722;
+                    width: 18px;
+                    height: 18px;
+                    border-radius: 50%;
+                    border: 3px solid white;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+                "></div>`,
+                iconSize: [22, 22],
+                iconAnchor: [11, 11]
+            });
+
+            // Add marker
+            window.recommendedCarwashMarker = L.marker([data.lat, data.lng], { icon }).addTo(map);
+
+            // Build popup
+            const popupHtml = `
+                <b>Recommended Car Wash Site</b><br>
+                Settlement: ${data.name || 'Unknown'}<br>
+                Population: ${data.population ?? 'Unknown'}<br>
+                Distance to nearest car wash: ${data.min_distance_to_carwash_km
+                                ? data.min_distance_to_carwash_km.toFixed(2) + ' km'
+                                : 'N/A'
+                            }<br>
+                Nearby settlements: ${data.nearby_settlements ?? 'N/A'}<br>
+                Reason: ${data.reason}
+            `;
+
+            // Display popup
+            window.recommendedCarwashMarker.bindPopup(popupHtml).openPopup();
+
+            // Zoom to the recommended location
+            map.setView([data.lat, data.lng], Math.max(map.getZoom(), 11));
+        })
+        .catch(err => showAlert('danger', 'Polygon recommendation failed'));
+}
+

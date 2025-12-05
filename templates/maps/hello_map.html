@@ -1,4 +1,3 @@
-
 {% extends 'base.html' %}
 {% load static %}
 
@@ -8,7 +7,7 @@
 <div class="container-fluid">
     <div class="row">
         <!-- Sidebar Panel -->
-        <aside class="col-lg-3 col-md-4 bg-dark py-4" >
+        <aside class="col-lg-3 col-md-4 bg-dark py-4">
             <div class="p-3 sticky-top" style="top: 0;">
 
                 <!-- Header Branding -->
@@ -19,7 +18,7 @@
                         <small class="text-secondary">Explore Ireland's Car Washes</small>
                     </div>
                 </div>
-                
+
                 <!-- User Instructions -->
                 <div class="card mb-3 shadow-sm">
                     <div class="card-header d-flex align-items-center">
@@ -37,19 +36,22 @@
                         <div id="instructions-business-mode" style="display:none;">
                             <strong>Business Mode:</strong><br>
                             <ul class="mb-2">
-                                <li>Counties are color-coded by car wash density: <span style="color:red;">Red</span> = more car washes, <span style="color:green;">Green</span> = fewer car washes.</li>
+                                <li>Counties are color-coded by car wash density: <span style="color:red;">Red</span> =
+                                    more car washes, <span style="color:green;">Green</span> = fewer car washes.</li>
                                 <li>Click to get recommendations for new car wash locations.</li>
-                                <li>Switch between <b>County Recommendation</b> and <b>Circle Recommendation</b> using the toggle below.</li>
+                                <li>Switch between <b>County Recommendation</b> and <b>Circle Recommendation</b> using
+                                    the toggle below.</li>
                             </ul>
                         </div>
                     </div>
                 </div>
-                
+
 
                 <!-- Map Layers Card -->
                 <div class="card mb-3 shadow-sm">
                     <div class="card-body">
-                        <button class="btn btn-outline-secondary btn-sm w-100" id="reset-view" title="Reset map to default view">
+                        <button class="btn btn-outline-secondary btn-sm w-100" id="reset-view"
+                            title="Reset map to default view">
                             <i class="fas fa-home me-1"></i>
                             Reset Map View
                         </button>
@@ -64,14 +66,17 @@
                     </div>
                     <div class="card-body">
                         <div class="btn-group w-100" role="group">
-                            <button id="user-mode-btn" class="btn btn-outline-primary btn-sm active" title="User mode: find car washes near you">User Mode</button>
-                            <button id="business-mode-btn" class="btn btn-outline-success btn-sm" title="Business mode: analyze locations for new car washes">Business Mode</button>
+                            <button id="user-mode-btn" class="btn btn-outline-primary btn-sm active"
+                                title="User mode: find car washes near you">User Mode</button>
+                            <button id="business-mode-btn" class="btn btn-outline-success btn-sm"
+                                title="Business mode: analyze locations for new car washes">Business Mode</button>
                         </div>
                     </div>
                 </div>
 
                 <!-- Business Mode Parameters -->
-                <div class="card mb-3 shadow-sm" id="business-params-card" style="display:none; max-height: 320px; overflow-y: auto;">
+                <div class="card mb-3 shadow-sm" id="business-params-card"
+                    style="display:none; max-height: 320px; overflow-y: auto;">
                     <div class="card-header d-flex align-items-center">
                         <i class="fas fa-sliders-h text-secondary me-2"></i>
                         <h6 class="mb-0">Business Mode Parameters</h6>
@@ -79,47 +84,75 @@
                     <div class="card-body">
                         <div class="mb-2">
                             <label for="min-distance-km" class="form-label">Min Distance to Car Wash (km)</label>
-                            <input type="number" class="form-control form-control-sm" id="min-distance-km" value="5" min="0" step="0.1" title="Minimum allowed distance to nearest car wash">
+                            <input type="number" class="form-control form-control-sm" id="min-distance-km" value="5"
+                                min="0" step="0.1" title="Minimum allowed distance to nearest car wash">
                         </div>
                         <div class="mb-2">
-                            <label for="max-settlement-distance-km" class="form-label">Max Settlement Distance (km)</label>
-                            <input type="number" class="form-control form-control-sm" id="max-settlement-distance-km" value="10" min="0" step="0.1" title="Maximum allowed distance to settlements">
+                            <label for="max-settlement-distance-km" class="form-label">Max Settlement Distance
+                                (km)</label>
+                            <input type="number" class="form-control form-control-sm" id="max-settlement-distance-km"
+                                value="10" min="0" step="0.1" title="Maximum allowed distance to settlements">
                         </div>
                         <hr>
                         <div class="mb-2">
                             <label class="form-label">Recommendation Mode</label>
                             <div class="btn-group w-100" role="group" id="business-mode-toggle-group">
-                                <button id="county-recommend-mode-btn" class="btn btn-outline-secondary btn-sm active" title="Recommend by county">County Recommendation</button>
-                                <button id="circle-recommend-mode-btn" class="btn btn-outline-secondary btn-sm" title="Recommend by circle">Circle Recommendation</button>
+                                <button id="county-recommend-mode-btn" class="btn btn-outline-secondary btn-sm active"
+                                    title="Recommend by county">County Recommendation</button>
+                                <button id="circle-recommend-mode-btn" class="btn btn-outline-secondary btn-sm"
+                                    title="Recommend by circle">Circle Recommendation</button>
+                                <button class="btn btn-outline-secondary btn-sm" id="polygon-recommend-mode-btn"
+                                    title="Recommend by polygon">Polygon Recommendation</button>
                             </div>
                             <div class="mt-2" id="recommendation-mode-instructions">
                                 <div id="county-recommendation-instructions">
                                     <strong>County Recommendation:</strong>
                                     <ul class="mb-2">
-                                        <li>Click a county to analyze car wash coverage and get recommended sites based on population and distance from existing car washes.</li>
+                                        <li>Click a county to analyze car wash coverage and get recommended sites based
+                                            on population and distance from existing car washes.</li>
                                     </ul>
                                 </div>
                                 <div id="circle-recommendation-instructions" style="display:none;">
                                     <strong>Circle Recommendation:</strong>
                                     <ul class="mb-2">
                                         <li>Set the center and radius for a custom area on the map.</li>
-                                        <li>Get recommended locations for new car washes within the selected circle.</li>
+                                        <li>Get recommended locations for new car washes within the selected circle.
+                                        </li>
                                     </ul>
+                                </div>
+                                <div id="polygon-recommendation-instructions" style="display:none;">
+                                    <strong>Polygon Recommendation:</strong>
+                                    <ul>
+                                        <li>Click on the map to add points.</li>
+                                        <li>Click “Finish Polygon” when done.</li>
+                                    </ul>
+
+                                    <button id="finish-polygon-btn" class="btn btn-success btn-sm w-100 mt-2" disabled>
+                                        Finish Polygon
+                                    </button>
+
+                                    <button id="clear-polygon-btn" class="btn btn-danger btn-sm w-100 mt-2">
+                                        Clear Polygon
+                                    </button>
                                 </div>
                             </div>
                         </div>
                         <div id="circle-recommend-params" style="display:none;">
                             <div class="mb-2">
                                 <label for="circle-lat" class="form-label">Circle Center Latitude</label>
-                                <input type="number" class="form-control form-control-sm" id="circle-lat" placeholder="Latitude" step="any" title="Latitude of circle center">
+                                <input type="number" class="form-control form-control-sm" id="circle-lat"
+                                    placeholder="Latitude" step="any" title="Latitude of circle center">
                             </div>
                             <div class="mb-2">
                                 <label for="circle-lng" class="form-label">Circle Center Longitude</label>
-                                <input type="number" class="form-control form-control-sm" id="circle-lng" placeholder="Longitude" step="any" title="Longitude of circle center">
+                                <input type="number" class="form-control form-control-sm" id="circle-lng"
+                                    placeholder="Longitude" step="any" title="Longitude of circle center">
                             </div>
                             <div class="mb-2">
                                 <label for="circle-radius-km" class="form-label">Circle Radius (km)</label>
-                                <input type="number" class="form-control form-control-sm" id="circle-radius-km" placeholder="Radius in km" value="10" min="0" step="0.1" title="Radius of recommendation circle">
+                                <input type="number" class="form-control form-control-sm" id="circle-radius-km"
+                                    placeholder="Radius in km" value="10" min="0" step="0.1"
+                                    title="Radius of recommendation circle">
                             </div>
                         </div>
                     </div>
@@ -132,7 +165,8 @@
                         <h6 class="mb-0">Nearby Car Washes</h6>
                     </div>
                     <div class="card-body p-0">
-                        <ul class="list-group list-group-flush" id="nearby-carwashes-list" style="max-height: 260px; overflow-y: auto;">
+                        <ul class="list-group list-group-flush" id="nearby-carwashes-list"
+                            style="max-height: 260px; overflow-y: auto;">
                             <!-- List items will be injected here -->
                         </ul>
                     </div>

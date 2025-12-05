@@ -11,4 +11,6 @@ urlpatterns = [
     path('nearby_populated_places/', views.nearby_populated_places, name='nearby_populated_places'),
     path('recommend_carwash_locations/', views.recommend_carwash_locations, name='recommend_carwash_locations'),
     path('recommend_carwash_locations_circle/', views.recommend_carwash_locations_circle, name='recommend_carwash_locations_circle'),
+    path('recommend/polygon/', views.recommend_carwash_locations_polygon, name='recommend_polygon'),
+
 ]
