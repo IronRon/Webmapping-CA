@@ -46,7 +46,9 @@ INSTALLED_APPS = [
     'django.contrib.gis',
     # Third party apps
     'rest_framework',
+    'rest_framework_gis',
     'corsheaders',
+    'drf_spectacular',
 
     # Local apps
     'testapp',
@@ -82,6 +84,16 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'ca_project.wsgi.application'
+
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.AllowAny',
+    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
 
 
 # Database

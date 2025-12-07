@@ -90,7 +90,9 @@ function setupEventListeners() {
             // Call backend for recommended location in circle
             let minDistanceKm = parseFloat(document.getElementById('min-distance-km').value) || 5;
             let maxSettlementDistanceKm = parseFloat(document.getElementById('max-settlement-distance-km').value) || 10;
-            fetch(`/recommend_carwash_locations_circle/?lat=${lat}&lng=${lng}&radius_km=${radiusKm}&min_distance_km=${minDistanceKm}&max_settlement_distance_km=${maxSettlementDistanceKm}`)
+            fetch(`/api/recommend_circle/?lat=${lat}&lng=${lng}&radius_km=${radiusKm}&min_distance_km=${minDistanceKm}&max_settlement_distance_km=${maxSettlementDistanceKm}`, {
+                credentials: 'include'
+            })
                 .then(response => response.json())
                 .then(data => {
                     if (data.recommendations && data.recommendations.length > 0) {
@@ -134,7 +136,9 @@ function setupEventListeners() {
             }
 
             // Send coordinates to backend to find nearest car wash
-            fetch(`/nearest_carwash/?lat=${lat}&lng=${lng}`)
+            fetch(`/api/nearest/?lat=${lat}&lng=${lng}`, {
+                credentials: 'include'
+            })
                 .then(response => response.json())
                 .then(data => {
                     if (data && data.location) {
@@ -155,7 +159,9 @@ function setupEventListeners() {
                 });
 
             // Fetch and display nearby car washes list
-            fetch(`/nearby_carwashes/?lat=${lat}&lng=${lng}`)
+            fetch(`/api/nearby/?lat=${lat}&lng=${lng}`, {
+                credentials: 'include'
+            })
                 .then(response => response.json())
                 .then(data => {
                     showNearbyCarwashesList(data.carwashes);
@@ -479,7 +485,9 @@ function loadCountyBoundaries() {
         .then(response => response.json())
         .then(data => {
             // fetch wash counts and use heatmap colors
-            fetch('/county_wash_counts/')
+            fetch('/api/county_wash_counts/', {
+                credentials: 'include'
+            })
                 .then(response => response.json())
                 .then(countData => {
                     const counts = countData.counts;
@@ -574,7 +582,7 @@ function showNearbyCarwashesList(carwashes) {
                 <b style="color:var(--primary-color);">${cw.name || 'Unnamed'}</b><br>
                 <small style="color:var(--text-muted);">${cw.address}</small>
             </div>
-            <span class="badge badge-dark-theme">${cw.distance.toFixed(2)} km</span>
+            <span class="badge badge-dark-theme">${cw.distance_km.toFixed(2)} km</span>
         `;
         li.style.cursor = 'pointer';
         li.onclick = function () {
@@ -594,8 +602,9 @@ function showRecommendedCarwashLocation(countyId) {
         minDistanceKm = parseFloat(document.getElementById('min-distance-km').value) || 5;
         maxSettlementDistanceKm = parseFloat(document.getElementById('max-settlement-distance-km').value) || 10;
     }
-    fetch(`/recommend_carwash_locations/?county_id=${countyId}&min_distance_km=${minDistanceKm}&max_settlement_distance_km=${maxSettlementDistanceKm}`)
-        .then(response => response.json())
+    fetch(`/api/recommend_county/?county_id=${countyId}&min_distance_km=${minDistanceKm}&max_settlement_distance_km=${maxSettlementDistanceKm}`, {
+        credentials: 'include'
+    }).then(response => response.json())
         .then(data => {
             if (data.recommendations && data.recommendations.length > 0) {
                 const rec = data.recommendations[0];
@@ -838,9 +847,13 @@ function sendPolygonToServer(geojson) {
 
     geojson.min_distance_km = minDistanceKm;
 
-    fetch("/recommend/polygon/", {
+    fetch("/api/recommend_polygon/", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCookie("csrftoken")
+        },
+        credentials: "include",
         body: JSON.stringify(geojson)
     })
         .then(r => r.json())
@@ -897,3 +910,17 @@ function sendPolygonToServer(geojson) {
         .catch(err => showAlert('danger', 'Polygon recommendation failed'));
 }
 
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+            cookie = cookie.trim();
+            if (cookie.startsWith(name + '=')) {
+                cookieValue = decodeURIComponent(cookie.slice(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
