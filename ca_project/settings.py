@@ -11,14 +11,16 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 import os
 from pathlib import Path
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-GDAL_LIBRARY_PATH = r"C:\GDAL\bin\gdal.dll"
-GEOS_LIBRARY_PATH = r"C:\GDAL\bin\geos_c.dll"
-PROJ_LIBRARY_PATH = r"C:\GDAL\bin\proj.dll" 
+load_dotenv(BASE_DIR / ".env")
 
+GDAL_LIBRARY_PATH = os.getenv("GDAL_LIBRARY_PATH")
+GEOS_LIBRARY_PATH = os.getenv("GEOS_LIBRARY_PATH")
+PROJ_LIBRARY_PATH = os.getenv("PROJ_LIBRARY_PATH")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -29,7 +31,10 @@ SECRET_KEY = 'django-insecure-^03kp8&=-1c$6fn!@qjrjg*(gwv94bya53z7)p3ixt8%j2q3h8
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = os.getenv(
+    "ALLOWED_HOSTS",
+    "localhost,127.0.0.1"
+).split(",")
 
 
 # Application definition
@@ -100,16 +105,18 @@ REST_FRAMEWORK = {
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 # Database configuration for PostGIS
+
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.contrib.gis.db.backends.postgis',
-        'NAME': 'webmapping_db_ca',
-        'USER': 'webmappingca',
-        'PASSWORD': 'awm123',
-        'HOST': 'localhost',
-        'PORT': '5432',
+    "default": {
+        "ENGINE": "django.contrib.gis.db.backends.postgis",
+        "NAME": os.getenv("DATABASE_NAME"),
+        "USER": os.getenv("DATABASE_USER"),
+        "PASSWORD": os.getenv("DATABASE_PASSWORD"),
+        "HOST": os.getenv("DATABASE_HOST", "localhost"),
+        "PORT": os.getenv("DATABASE_PORT", "5432"),
     }
 }
+
 
 
 # Password validation
