@@ -2,9 +2,10 @@ from django.db import models
 from django.contrib import admin
 from .models import Location, TestArea, IrishCounty
 from django.contrib.gis.admin import OSMGeoAdmin
+from .models import Location
+from .osm_import import replace_carwashes_from_overpass
 
 # Register your models here.
-admin.site.register(Location)
 admin.site.register(TestArea)
  
 
@@ -31,3 +32,23 @@ class IrishCountyAdmin(OSMGeoAdmin):
             return f"{obj.area_km2:.0f} km²"
         return "N/A"
     area_display.short_description = "Area"
+
+@admin.register(Location)
+class LocationAdmin(admin.ModelAdmin):
+    list_display = ("name", "amenity", "addr_city", "addr_postcode")
+    search_fields = ("name", "addr_city", "addr_postcode", "brand", "operator")
+    actions = ["refresh_from_osm"]
+
+    def refresh_from_osm(self, request, queryset):
+        """
+        Admin action: fetch latest car washes from OSM Overpass
+        and replace Location rows.
+        """
+        imported, deleted = replace_carwashes_from_overpass()
+        self.message_user(
+            request,
+            f"Car wash data refreshed from OSM. "
+            f"Imported {imported} locations, deleted {deleted} old rows.",
+        )
+
+    refresh_from_osm.short_description = "Refresh carwashes from OpenStreetMap (Overpass)"

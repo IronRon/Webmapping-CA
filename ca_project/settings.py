@@ -163,3 +163,16 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # CORS settings for development
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
+
+# OpenStreetMap / Overpass API settings
+OVERPASS_API_URL = "https://overpass-api.de/api/interpreter"
+OVERPASS_CARWASH_QUERY_IRELAND = r"""
+[out:json][timeout:180];
+area["name"="Ireland"]->.searchArea;
+(
+  node["amenity"="car_wash"](area.searchArea);
+  way["amenity"="car_wash"](area.searchArea);
+  relation["amenity"="car_wash"](area.searchArea);
+);
+out center;
+"""
