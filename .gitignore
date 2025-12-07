@@ -10,6 +10,7 @@ ca_env/
 venv/
 env/
 .env
+.env.prod
 
 # Django
 *.sqlite3
