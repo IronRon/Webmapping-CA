@@ -1,4 +1,5 @@
 from django.contrib.gis.db import models 
+from django.contrib.auth.models import User
  
 class Location(models.Model):
     """Model matching the imported 'carwash' table from OSM/GeoJSON"""
@@ -101,3 +102,31 @@ class PopulationPoint(models.Model):
 
     def __str__(self):
         return f"{self.name or self.id} ({self.population or 'unknown'})"
+
+
+class SavedRecommendation(models.Model):
+    SOURCE_CHOICES = [
+        ('county', 'County'),
+        ('circle', 'Circle'),
+        ('polygon', 'Polygon'),
+    ]
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='saved_recommendations'
+    )
+
+    point = models.PointField(srid=4326)
+
+    source_type = models.CharField(
+        max_length=20,
+        choices=SOURCE_CHOICES
+    )
+
+    reason = models.TextField()
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.source_type} ({self.created_at.date()})"

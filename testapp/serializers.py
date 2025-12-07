@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from rest_framework_gis.serializers import GeoFeatureModelSerializer
-from .models import Location, IrishCounty, IrishCounty
+from .models import Location, IrishCounty, IrishCounty, SavedRecommendation
 
 class CarwashSerializer(serializers.ModelSerializer):
     lat = serializers.SerializerMethodField()
@@ -84,3 +84,24 @@ class CarwashRecommendationSerializer(serializers.Serializer):
     min_distance_to_carwash_km = serializers.FloatField(allow_null=True)
     nearby_settlements = serializers.IntegerField()
     reason = serializers.CharField()
+
+class SavedRecommendationSerializer(serializers.ModelSerializer):
+    lat = serializers.SerializerMethodField()
+    lng = serializers.SerializerMethodField()
+
+    class Meta:
+        model = SavedRecommendation
+        fields = [
+            'id',
+            'lat',
+            'lng',
+            'source_type',
+            'reason',
+            'created_at'
+        ]
+
+    def get_lat(self, obj):
+        return obj.point.y
+
+    def get_lng(self, obj):
+        return obj.point.x

@@ -3,6 +3,8 @@ let map;
 let userMarkers = [];
 let currentMode = 'user'; // 'user' or 'business'
 let countyLayer = null;
+let savedRecommendations = [];
+let lastRecommendation = null;
 
 // Initialize application when page loads
 document.addEventListener('DOMContentLoaded', function () {
@@ -97,6 +99,12 @@ function setupEventListeners() {
                 .then(data => {
                     if (data.recommendations && data.recommendations.length > 0) {
                         const rec = data.recommendations[0];
+                        lastRecommendation = {
+                            lat: rec.lat,
+                            lng: rec.lng,
+                            source_type: 'circle',
+                            reason: 'Recommended site within selected circle'
+                        };
                         // Remove previous recommended marker if exists
                         if (window.recommendedCarwashMarker) {
                             map.removeLayer(window.recommendedCarwashMarker);
@@ -114,7 +122,11 @@ function setupEventListeners() {
                             `Settlement: ${rec.name || 'Unknown'}<br>` +
                             `Population: ${rec.population || 'Unknown'}<br>` +
                             `Distance to nearest car wash: ${rec.min_distance_to_carwash_km ? rec.min_distance_to_carwash_km.toFixed(2) : 'N/A'} km` +
-                            `<br>Nearby settlements: ${rec.nearby_settlements}`
+                            `<br>Nearby settlements: ${rec.nearby_settlements}` +
+                            `<hr>
+                            <button class="btn btn-sm btn-success w-100" onclick="saveRecommendation()">
+                                <i class="fas fa-bookmark me-1"></i> Save Recommendation
+                            </button>`
                         ).openPopup();
                         map.setView([rec.lat, rec.lng], Math.max(map.getZoom(), 11));
                     } else {
@@ -608,6 +620,12 @@ function showRecommendedCarwashLocation(countyId) {
         .then(data => {
             if (data.recommendations && data.recommendations.length > 0) {
                 const rec = data.recommendations[0];
+                lastRecommendation = {
+                    lat: rec.lat,
+                    lng: rec.lng,
+                    source_type: 'county',
+                    reason: `Recommended site in ${rec.name || 'selected county'}`
+                };
                 // Remove previous recommended marker if exists
                 if (window.recommendedCarwashMarker) {
                     map.removeLayer(window.recommendedCarwashMarker);
@@ -625,7 +643,11 @@ function showRecommendedCarwashLocation(countyId) {
                     `Settlement: ${rec.name || 'Unknown'}<br>` +
                     `Population: ${rec.population || 'Unknown'}<br>` +
                     `Distance to nearest car wash: ${rec.min_distance_to_carwash_km ? rec.min_distance_to_carwash_km.toFixed(2) : 'N/A'} km` +
-                    `<br>Nearby settlements: ${rec.nearby_settlements}`
+                    `<br>Nearby settlements: ${rec.nearby_settlements}` +
+                    `<hr>
+                    <button class="btn btn-sm btn-success w-100" onclick="saveRecommendation()">
+                        <i class="fas fa-bookmark me-1"></i> Save Recommendation
+                    </button>`
                 ).openPopup();
                 map.setView([rec.lat, rec.lng], Math.max(map.getZoom(), 11));
             } else {
@@ -746,6 +768,7 @@ function setMode(mode) {
     // Reset business recommend mode to county when switching modes
     if (mode === 'business') {
         setBusinessRecommendMode(businessRecommendMode);
+        loadSavedRecommendations();
     }
 }
 
@@ -863,6 +886,13 @@ function sendPolygonToServer(geojson) {
                 return;
             }
 
+            lastRecommendation = {
+                lat: data.lat,
+                lng: data.lng,
+                source_type: 'polygon',
+                reason: data.reason || 'Recommended site within selected polygon'
+            };
+
             // Place recommended marker
             // Clear previous recommended marker if any
             if (window.recommendedCarwashMarker) {
@@ -899,6 +929,10 @@ function sendPolygonToServer(geojson) {
                 }<br>
                 Nearby settlements: ${data.nearby_settlements ?? 'N/A'}<br>
                 Reason: ${data.reason}
+                <hr>
+                <button class="btn btn-sm btn-success w-100" onclick="saveRecommendation()">
+                    <i class="fas fa-bookmark me-1"></i> Save Recommendation
+                </button>   
             `;
 
             // Display popup
@@ -923,4 +957,128 @@ function getCookie(name) {
         }
     }
     return cookieValue;
+}
+
+function loadSavedRecommendations() {
+    fetch('/api/recommendations/', {
+        credentials: 'include'
+    })
+        .then(res => res.json())
+        .then(data => {
+            savedRecommendations = data.recommendations || [];
+            renderSavedRecommendations();
+        })
+        .catch(err => {
+            console.error(err);
+            showAlert('danger', 'Failed to load saved recommendations.');
+        });
+}
+
+function renderSavedRecommendations() {
+    const card = document.getElementById('saved-recommendations-card');
+    const list = document.getElementById('saved-recommendations-list');
+
+    if (!card || !list) return;
+
+    // Only visible in business mode + logged in
+    if (currentMode !== 'business' || !window.USER_LOGGED_IN) {
+        card.style.display = 'none';
+        return;
+    }
+
+    list.innerHTML = '';
+
+    if (savedRecommendations.length === 0) {
+        list.innerHTML = `
+            <li class="list-group-item text-muted">
+                No saved recommendations yet.
+            </li>`;
+        card.style.display = '';
+        return;
+    }
+
+    savedRecommendations.forEach((rec, idx) => {
+        const li = document.createElement('li');
+        li.className = 'list-group-item list-group-item-action';
+        li.style.cursor = 'pointer';
+
+        li.innerHTML = `
+            <div>
+                <strong>${rec.source_type.toUpperCase()}</strong><br>
+                <small class="text-muted">
+                    ${new Date(rec.created_at).toLocaleString()}
+                </small>
+            </div>
+        `;
+
+        li.onclick = () => showSavedRecommendationOnMap(rec);
+
+        list.appendChild(li);
+    });
+
+    card.style.display = '';
+}
+
+function showSavedRecommendationOnMap(rec) {
+    // Remove previous recommended marker
+    if (window.recommendedCarwashMarker) {
+        map.removeLayer(window.recommendedCarwashMarker);
+    }
+
+    // Same icon used for county/circle/polygon recommendations
+    const icon = L.divIcon({
+        className: 'recommended-marker',
+        html: `<div style="
+            background-color: #ff5722;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+        "></div>`,
+        iconSize: [22, 22],
+        iconAnchor: [11, 11]
+    });
+
+    window.recommendedCarwashMarker = L.marker(
+        [rec.lat, rec.lng],
+        { icon }
+    ).addTo(map);
+
+    window.recommendedCarwashMarker.bindPopup(`
+        <b>Saved Recommendation</b><br>
+        Source: ${rec.source_type}<br>
+        ${rec.reason || ''}
+    `).openPopup();
+
+    map.setView([rec.lat, rec.lng], Math.max(map.getZoom(), 11));
+}
+
+function saveRecommendation() {
+    if (!lastRecommendation) {
+        showAlert('warning', 'No recommendation to save.');
+        return;
+    }
+
+    fetch('/api/recommendations/save/', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify(lastRecommendation)
+    })
+        .then(res => {
+            if (!res.ok) throw new Error('Save failed');
+            return res.json();
+        })
+        .then(() => {
+            showAlert('success', 'Recommendation saved!');
+            loadSavedRecommendations();
+        })
+        .catch(err => {
+            console.error(err);
+            showAlert('danger', 'Failed to save recommendation.');
+        });
 }

@@ -10,4 +10,6 @@ urlpatterns = [
     path('recommend_county/', api_views.recommend_carwash_locations_county_api),
     path('recommend_circle/', api_views.recommend_carwash_locations_circle_api),
     path('recommend_polygon/', api_views.recommend_carwash_locations_polygon_api),
+    path('recommendations/save/', api_views.save_recommendation_api),
+    path('recommendations/', api_views.list_saved_recommendations_api),
 ]
