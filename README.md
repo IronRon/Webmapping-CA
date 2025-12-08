@@ -1,9 +1,9 @@
 
 # CleanMyRide: Location-Based Car Wash Finder & Business Analysis
 
-CleanMyRide is a location-based web application that helps users find nearby car washes and assists business owners in identifying the best areas to open new ones. The project demonstrates practical use of spatial data analysis by combining geospatial queries, interactive mapping, and real-world business logic.
+CleanMyRide is a comprehensive location-based platform that helps users find nearby car washes with real-time weather advisories and assists business owners in identifying optimal locations for new car wash operations. Available as both a web application and native Android mobile app, the project demonstrates advanced spatial data analysis, interactive mapping, and cross-platform development.
 
-![Car Wash App](screenshots/car_wash_app.png)
+![Car Wash App](screenshots/app1.png)
 
 ## Features
 
@@ -27,20 +27,6 @@ CleanMyRide is a location-based web application that helps users find nearby car
       - View all car washes in Ireland
       - Search for nearest car wash
       - Interactive markers with details (name, address, service type, operating hours)
-      - See a list of nearby car washes after clicking on the map
-   - **Business Mode:**
-      - Analytical view of car wash coverage by county (heatmap)
-      - Counties always color-coded by car wash count (spatial aggregation)
-      - Clickable counties for details: number of car washes, names, and more
-      - **County Recommendation:**
-         - Default mode for business analytics
-         - Click a county to view car wash statistics and get a recommended site for a new car wash based on county data
-         - Visual feedback with county heatmap and recommended marker
-      - **Circle Recommendation:**
-         - Toggle to circle mode to select a custom area for analysis
-         - Click the map to set the center and radius, and get a recommended site for a new car wash
-         - Visual feedback with a drawn circle and recommended marker
-
 ## Database Design & Spatial Data
 
 CleanMyRide uses PostgreSQL with the PostGIS extension, providing robust support for spatial data and geospatial queries. The database schema is carefully designed to leverage multiple spatial data types:
@@ -92,34 +78,157 @@ Population points within buffer: 4.94ms, found 1
 These results demonstrate significant speedup for proximity and intersection queries after spatial index creation. All query types are now optimized for scalable, real-time analytics.
 
 ## Technical Stack
-- Python 3.x, Django 4.x, GeoDjango
-- PostgreSQL with PostGIS extension
-- Leaflet.js for frontend mapping
-- GDAL/ogr2ogr for spatial data import
-- REST API endpoints for GeoJSON data
+
+### Backend
+- **Django 4.2.7** with GeoDjango for spatial operations
+- **PostgreSQL + PostGIS** for geospatial database
+- **Django REST Framework** for API endpoints
+- **CORS Headers** for cross-origin requests
+- **OpenWeatherMap API** for weather data integration
+
+### Frontend (Web)
+- **Leaflet.js 1.9.4** for interactive maps
+- **Bootstrap 5.3.2** with custom dark theme
+- **Font Awesome 6.4.0** for icons
+- **Vanilla JavaScript** for application logic
+- **CSS Animations** for smooth transitions and effects
+
+### Mobile (Android)
+- **Apache Cordova 14.0.1** for native app wrapper
+- **Android SDK 33** (target), SDK 24 (minimum)
+- **Cordova Plugins:**
+  - `cordova-plugin-geolocation` for location services
+  - `cordova-plugin-device` for device information
+  - `cordova-plugin-network-information` for connectivity status
+  - `cordova-plugin-inappbrowser` for external links
+  - Additional plugins for enhanced functionality
+
+### Development Tools
+- **Docker & Docker Compose** for containerized deployment
+- **Nginx** as reverse proxy
+- **GDAL/ogr2ogr** for spatial data import
+- **Git** for version control
 
 ## Setup
-1. Clone the repository and navigate to the project folder.
-2. Create and activate a Python virtual environment (e.g., `ca_env`).
-3. Install dependencies:
+
+### Web Application Setup
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/IronRon/Webmapping-CA.git
+   cd Webmapping-CA
    ```
+
+2. **Create and activate virtual environment:**
+   ```bash
+   python -m venv ca_env
+   # Windows
+   ca_env\Scripts\activate
+   # Linux/Mac
+   source ca_env/bin/activate
+   ```
+
+3. **Install Python dependencies:**
+   ```bash
    pip install -r requirements.txt
    ```
-4. Configure your database settings in `ca_project/settings.py` for PostgreSQL/PostGIS.
-5. Run migrations:
+
+4. **Configure environment variables:**
+   Create a `.env.prod` file with:
    ```
+   DATABASE_NAME=your_db_name
+   DATABASE_USER=your_db_user
+   DATABASE_PASSWORD=your_db_password
+   OPENWEATHER_API_KEY=your_api_key
+   ```
+
+5. **Run database migrations:**
+   ```bash
    python manage.py makemigrations
    python manage.py migrate
    ```
-6. Import car wash and county data using GDAL/ogr2ogr (see documentation for commands).
-7. Create a superuser:
+
+6. **Import spatial data:**
+   ```bash
+   # Import car washes from GeoJSON
+   python manage.py ogr2ogr import static/data/carwashes_ireland.geojson
+   
+   # Import county boundaries
+   python manage.py ogr2ogr import static/data/irish_counties/counties.shp
    ```
+
+7. **Create superuser:**
+   ```bash
    python manage.py createsuperuser
    ```
-8. Start the development server:
-   ```
+
+8. **Start development server:**
+   ```bash
    python manage.py runserver
    ```
+
+### Docker Deployment
+
+1. **Build and start containers:**
+   ```bash
+   docker-compose up -d
+   ```
+
+2. **Access services:**
+   - Web App: `http://localhost:80`
+   - Django Admin: `http://localhost:80/admin`
+   - PgAdmin: `http://localhost:5050`
+
+### Mobile App Setup
+
+1. **Install Cordova CLI:**
+   ```bash
+   npm install -g cordova
+   ```
+
+2. **Navigate to mobile project:**
+   ```bash
+   cd webmappingca-mobile
+   ```
+
+3. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+
+4. **Configure API URL:**
+   Edit `www/js/mobile.js` and set `API_BASE_URL` to your server address:
+   ```javascript
+   const API_BASE_URL = 'http://YOUR_SERVER_IP';
+   ```
+
+5. **Add Android platform (if not present):**
+   ```bash
+   cordova platform add android
+   ```
+
+6. **Build the app:**
+   ```bash
+   cordova build android
+   ```
+
+7. **Deploy to device:**
+   ```bash
+   # Connect Android device via USB with USB Debugging enabled
+   cordova run android --device
+   ```
+
+### Network Configuration for Mobile
+
+**Important:** For the mobile app to communicate with your Django server:
+
+1. **Same WiFi Network:** Ensure your phone and server are on the same network
+2. **Django ALLOWED_HOSTS:** Add your server IP to `settings.py`:
+   ```python
+   ALLOWED_HOSTS = ['your.server.ip', 'localhost']
+   ```
+3. **CORS Settings:** Already configured in `settings.py` to allow localhost
+4. **Network Security:** Android cleartext traffic is enabled in `config.xml`
 
 ## Usage
 - Access the map at the root URL to explore car washes and county boundaries.
@@ -128,71 +237,255 @@ These results demonstrate significant speedup for proximity and intersection que
 - In User Mode, click the map to find the nearest car wash and see a list of nearby car washes.
 - In Business County Mode, click any county to view car wash statistics and get a recommended location for a new car wash based on county population and density.
 - In Business Circle Mode, toggle to circle recommendation, click the map to set the center, adjust the radius, and view recommended locations for new car washes within the selected area.
-- The map and sidebar update interactively based on the selected mode and parameters.
-- **Recommendation Algorithm:**
-   - For both county and circle modes, the backend uses population points (settlements) as candidate locations for new car washes.
-   - For each candidate, it calculates the distance to the nearest existing car wash and the number of nearby settlements.
-   - Candidates are filtered to ensure a minimum distance from existing car washes and proximity to settlements.
-   - The best locations are ranked by distance from the nearest car wash (favoring underserved areas) and by population (favoring larger settlements).
-   - The top recommended sites are returned to the frontend and visualized on the map.
-   - All spatial queries use PostGIS and GeoDjango for efficient geospatial analysis.
-
 ### Data Handling & Validation
 
 CleanMyRide ensures robust data handling and validation throughout the application:
 
-- **Error Handling:** All API views use try/except blocks to catch errors and return clear JSON error messages. For example, if a user provides invalid coordinates, the backend responds with a helpful error instead of crashing.
+- **Error Handling:** All API views use try/except blocks to catch errors and return clear JSON error messages. Invalid coordinates or parameters receive helpful error responses instead of crashes.
 
-   ```python
-   try:
-         lat = float(request.GET.get('lat'))
-         lng = float(request.GET.get('lng'))
-         # ...spatial query...
-   except Exception as e:
-         return JsonResponse({'error': str(e)}, status=400)
-   ```
+- **Input Validation:** User inputs (latitude, longitude, search parameters) are validated for correct types and ranges before processing, preventing invalid queries and ensuring reliable results.
 
-- **Input Validation:** User inputs (like latitude, longitude, and search parameters) are validated for correct types and ranges before processing. This prevents invalid queries and ensures reliable results.
+- **Security Practices:** Only safe fields are exposed in API responses using serializers. All database queries use Django ORM, protecting against SQL injection. CSRF protection enabled for state-changing operations.
 
-- **Security Practices:** Only safe fields are exposed in API responses using serializers, and sensitive data is never returned to the frontend. All database queries use Django ORM, protecting against SQL injection.
+- **Data Serialization:** Django REST Framework serializers convert model data into clean, structured JSON for API responses. The `LocationSerializer` ensures only relevant fields (`id`, `name`, `lat`, `lng`) are sent to the frontend.
 
-- **Data Serialization:** The app uses Django REST Framework serializers to convert model data into clean, structured JSON for API responses. For example, the `LocationSerializer` ensures only relevant fields (like `id`, `name`, `lat`, `lng`) are sent to the frontend.
+- **GeoJSON for Mapping:** Spatial data is serialized into GeoJSON format for seamless integration with Leaflet.js and other mapping libraries.
 
-   ```python
-   class LocationSerializer(serializers.ModelSerializer):
-         lat = serializers.SerializerMethodField()
-         lng = serializers.SerializerMethodField()
-         class Meta:
-               model = Location
-               fields = ['id', 'name', 'lat', 'lng']
-   ```
+- **CORS Configuration:** Properly configured to allow cross-origin requests from both web and mobile applications, with explicit whitelisting of trusted origins.
 
-- **GeoJSON for Mapping:** For map layers, spatial data is serialized into GeoJSON format, making it easy to display on the frontend and work with mapping libraries.
+## Architecture & Design
+
+### System Architecture
+
+```
+┌─────────────────┐         ┌──────────────────┐
+│   Web Browser   │         │  Android Mobile  │
+│   (Desktop/     │         │   (Cordova App)  │
+│    Mobile)      │         │                  │
+└────────┬────────┘         └────────┬─────────┘
+         │                           │
+         │  HTTP/HTTPS              │  HTTP
+         │                           │
+         └──────────┬────────────────┘
+                    │
+         ┌──────────▼──────────┐
+         │   Nginx (Reverse    │
+         │      Proxy)         │
+         └──────────┬──────────┘
+                    │
+         ┌──────────▼──────────┐
+         │   Django Backend    │
+         │   (GeoDjango)       │
+         │                     │
+         │  ┌───────────────┐  │
+         │  │  API Views    │  │
+         │  │  Serializers  │  │
+         │  │  URL Routes   │  │
+         │  └───────────────┘  │
+         └──────────┬──────────┘
+                    │
+         ┌──────────▼──────────┐      ┌──────────────┐
+         │  PostgreSQL +       │      │ OpenWeather  │
+         │  PostGIS Database   │      │     API      │
+         │                     │      └──────────────┘
+         │  ┌───────────────┐  │
+         │  │ Spatial       │  │
+         │  │ Indexes       │  │
+         │  │ (GIST)        │  │
+         │  └───────────────┘  │
+         └─────────────────────┘
+```
+
+### File Structure
+
+```
+CA/
+├── ca_project/              # Django project settings
+│   ├── settings.py          # Main configuration
+│   ├── urls.py              # URL routing
+│   └── wsgi.py              # WSGI entry point
+├── testapp/                 # Main application
+│   ├── models.py            # Spatial models (Location, County, etc.)
+│   ├── views.py             # Web views
+│   ├── api_views.py         # API endpoints
+│   ├── api_urls.py          # API URL patterns
+│   └── serializers.py       # DRF serializers
+├── templates/               # HTML templates
+│   ├── base.html            # Base template
+│   └── maps/
+│       └── hello_map.html   # Main map interface
+├── static/                  # Static assets
+│   ├── css/
+│   │   └── style.css        # Custom styles (780+ lines)
+│   ├── js/
+│   │   └── main.js          # Main application logic (1428+ lines)
+│   └── data/                # Spatial data files
+├── docker/                  # Docker configurations
+│   ├── django/
+│   ├── nginx/
+│   └── postgres/
+├── webmappingca-mobile/     # Cordova mobile app
+│   ├── config.xml           # Cordova configuration
+│   ├── www/
+│   │   ├── index.html       # Mobile app HTML
+│   │   ├── css/
+│   │   │   └── mobile.css   # Mobile-specific styles
+│   │   └── js/
+│   │       └── mobile.js    # Mobile app logic (700+ lines)
+│   └── platforms/
+│       └── android/         # Android platform files
+└── docker-compose.yml       # Multi-container setup
+```
 
 ## Known Issues & Limitations
 
-- **Limited International Data:** Car wash locations are only imported for Ireland.
-- **Spatial Data Imports:** Import scripts for car washes and counties require manual execution and may need adjustment for new datasets.
-- **Performance:** Polygons for irish counties takes lots of time to load
+### Data Coverage
+- **Geographic Scope:** Car wash locations currently limited to Ireland
+- **Data Source:** All car wash data imported from OpenStreetMap (crowd-sourced)
+- **County Boundaries:** Only Irish counties included in spatial analysis
+
+### Performance
+- **County Polygon Loading:** Initial load of county boundaries can be slow (large geometries)
+- **Mobile Data Usage:** Map tiles and GeoJSON data consume bandwidth on mobile networks
+- **API Rate Limits:** OpenWeatherMap API has request limits (free tier)
+
+### Mobile App
+- **Network Dependency:** Requires active internet connection for API calls
+- **Platform Support:** Currently Android-only (iOS not implemented)
+- **Offline Mode:** No offline map support or cached data
+- **HTTPS Limitation:** Configured for HTTP; production should use HTTPS
+
+### Spatial Queries
+- **Large Radius Searches:** Performance degrades with very large search radii (>50km)
+- **Real-Time Updates:** Car wash data is static; no live updates from OSM
+- **Accuracy:** Relies on OSM data quality and completeness
+
+### Future Improvements
+- Expand geographic coverage to more countries
+- Implement user-generated car wash submissions
+- Add offline map support for mobile app
+- iOS version of mobile app
+- Real-time data synchronization with OSM
+- Enhanced caching and performance optimization
 
 ## Screenshots
 
-Below are screenshots of the running application:
+### Desktop Web Application
 
-### Desktop Views
-![Main App](screenshots/car_wash_app.png)
-![Business Mode](screenshots/business_mode.png)
-![Circle Recommendation Mode](screenshots/circle_mode.png)
+**User Mode - Find Nearby Car Washes**
+![Main App](screenshots/app1.png)
+*Interactive map with custom teardrop markers, floating nearby locations card, and weather advisory panel*
 
-### Mobile Views
-![Mobile View 1](screenshots/mobile_v1.png)
+**Business Mode - Market Analysis**
+![Business Mode](screenshots/app2.png)
+*County heatmap visualization with color-coded density, competition analysis panel, and recommendation tools*
+
+**Circle Recommendation Mode**
+![Circle Recommendation Mode](screenshots/circle.png)
+*Draw circles to analyze custom areas with population density and competition metrics*
+
+### Mobile Application (Android)
+
+**Mobile User Interface**
+![Mobile View 1](screenshots/mobile1.png)
+*Responsive mobile layout with slide-out menu, touch-optimized controls, and geolocation integration*
+
+**Mobile Business Mode**
 ![Mobile View 2](screenshots/mobile_v2.png)
+*Competition analysis on mobile with market saturation metrics and recommendations*
 
-## Notes
-- The main app is `testapp`, which contains spatial models and views.
-- County heatmap and business analytics features use spatial aggregation (point-in-polygon queries) for accurate density analysis.
-- Marker logic and UI have been improved for clarity and usability.
-- More features and documentation will be added as the project develops.
+## Debugging Mobile App
+
+### Chrome Remote Debugging
+
+To view console logs and debug the mobile app:
+
+1. **Enable USB Debugging on Android:**
+   - Go to Settings → About Phone
+   - Tap "Build Number" 7 times to enable Developer Options
+   - Go to Settings → Developer Options
+   - Enable "USB Debugging"
+
+2. **Connect device via USB and open Chrome on your computer**
+
+3. **Navigate to:** `chrome://inspect#devices`
+
+4. **Find your app:** Look for "WebView in com.tud.webmappingCA"
+
+5. **Click "inspect"** to open Chrome DevTools with:
+   - Full console logs
+   - Network requests monitoring
+   - JavaScript debugging
+   - DOM inspection
+
+### Common Issues
+
+**"Failed to fetch" errors:**
+- Ensure phone and server are on same WiFi network
+- Check `API_BASE_URL` in `mobile.js` matches your server IP
+- Verify Django `ALLOWED_HOSTS` includes your server IP
+- Confirm CORS settings allow `http://localhost`
+
+**App not loading:**
+- Rebuild app after any JavaScript changes
+- Check Chrome DevTools for specific error messages
+- Verify network security config allows cleartext traffic
+
+## Development Notes
+
+### Code Quality
+- **Type Safety:** JavaScript code uses JSDoc comments for type hints
+- **Error Handling:** Comprehensive try-catch blocks with user-friendly error messages
+- **Input Validation:** All user inputs validated before processing
+- **Security:** SQL injection protection via Django ORM, CSRF protection enabled
+
+### Performance Optimization
+- **Spatial Indexes:** GIST indexes on all geometry fields
+- **Query Optimization:** Demonstrated 60-70% improvement in spatial query times
+- **Lazy Loading:** Map tiles and data loaded on-demand
+- **Caching:** Static assets cached by Nginx
+
+### Testing
+- Performance benchmarking via custom management commands
+- Manual testing across multiple devices and screen sizes
+- API endpoint testing with Django REST Framework browsable API
+
+### Deployment Considerations
+- Docker Compose for easy multi-container deployment
+- Environment variables for sensitive configuration
+- Nginx reverse proxy for production readiness
+- PostgreSQL with PostGIS for robust spatial operations
+
+## Contributing
+
+This project was created as a continuous assessment for Advanced Web Mapping. Contributions, suggestions, and feedback are welcome!
+
+### Development Workflow
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## License
+
+This project is created for educational purposes as part of Advanced Web Mapping CA, 2025.
+
+## Acknowledgments
+
+- **OpenStreetMap Contributors** for car wash location data
+- **OpenWeatherMap** for weather API services
+- **Leaflet.js** for excellent mapping library
+- **Django & GeoDjango** for robust spatial framework
+- **Apache Cordova** for cross-platform mobile development
+
+## Contact
+
+**Project:** CleanMyRide  
+**Repository:** [Webmapping-CA](https://github.com/IronRon/Webmapping-CA)  
+**Created:** 2025  
+**Purpose:** Advanced Web Mapping CA
 
 ---
-*Created for Advanced Web Mapping CA, 2025. Project: CleanMyRide*
+
+*Developed with ❤️ for Advanced Web Mapping, 2025*
