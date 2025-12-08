@@ -23,7 +23,10 @@ from django.urls import reverse_lazy
 from django.views.generic import CreateView
 from django.contrib.auth.decorators import login_required
 from .forms import LoginForm, SignUpForm
+from django.views.decorators.clickjacking import xframe_options_exempt
+from django.utils.decorators import method_decorator
 
+@xframe_options_exempt
 def hello_map(request):
     """Main map view with environment information"""
     django_version = django.get_version()
@@ -312,6 +315,7 @@ def recommend_carwash_locations_polygon(request):
         })
 
 
+@method_decorator(csrf_exempt, name='dispatch')
 class CustomLoginView(LoginView):
     """Custom login view using our custom form."""
     form_class = LoginForm
@@ -331,7 +335,7 @@ class CustomLoginView(LoginView):
         messages.error(self.request, 'Invalid username or password.')
         return redirect('/')
 
-
+@method_decorator(csrf_exempt, name='dispatch')
 class SignUpView(CreateView):
     """User registration view."""
     form_class = SignUpForm
@@ -351,7 +355,7 @@ class SignUpView(CreateView):
         messages.error(self.request, 'Please correct the errors below.')
         return super().form_invalid(form)
 
-
+@method_decorator(csrf_exempt, name='dispatch')
 def custom_logout_view(request):
     """Custom logout view with success message."""
     username = request.user.username if request.user.is_authenticated else 'User'

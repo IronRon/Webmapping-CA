@@ -60,10 +60,18 @@
     </div>
 </div>
 
+<!-- Mobile Sidebar Toggle -->
+<button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle Sidebar">
+    <i class="fas fa-bars"></i>
+</button>
+
+<!-- Sidebar Overlay for Mobile -->
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
+
 <div class="container-fluid" style="z-index: 0;">
     <div class="row">
         <!-- Sidebar Panel -->
-        <aside class="col-lg-3 col-md-4 bg-dark sidebar-panel">
+        <aside class="col-lg-3 col-md-4 bg-dark sidebar-panel" id="sidebar-panel">
             <div class="p-3">
 
                 <!-- User Instructions -->
@@ -83,13 +91,48 @@
                         <div id="instructions-business-mode" style="display:none;">
                             <strong>Business Mode:</strong>
                             <ul class="mb-0 mt-2">
-                                <li>Counties are color-coded: <span style="color:#ff6b6b;">Red</span> = more car washes, <span style="color:#51cf66;">Green</span> = fewer</li>
+                                <li>Counties are color-coded: <span style="color:#ff6b6b;">Red</span> = more car washes,
+                                    <span style="color:#51cf66;">Green</span> = fewer
+                                </li>
                                 <li>Select a recommendation type from the top toolbar</li>
                                 <li>Click on the map or county to get location recommendations</li>
                             </ul>
                         </div>
                     </div>
                 </div>
+
+                <!-- Weather Advisory Panel (User Mode Only) -->
+                <div class="card mb-3 shadow-sm" id="weather-panel" style="display:none;">
+                    <div class="card-header d-flex align-items-center">
+                        <i class="fas fa-cloud-sun text-warning me-2"></i>
+                        <h6 class="mb-0">Car Wash Weather Advisor</h6>
+                    </div>
+                    <div class="card-body">
+                        <div id="weather-content">
+                            <div class="text-center text-muted py-3">
+                                <i class="fas fa-info-circle fa-2x mb-2"></i>
+                                <p class="mb-0 small">Click on a car wash to see weather advice</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Competition Analysis Panel (Business Mode Only) -->
+                <div class="card mb-3 shadow-sm" id="competition-panel" style="display:none;">
+                    <div class="card-header d-flex align-items-center">
+                        <i class="fas fa-chart-bar text-info me-2"></i>
+                        <h6 class="mb-0">Market Competition Analysis</h6>
+                    </div>
+                    <div class="card-body">
+                        <div id="competition-content">
+                            <div class="text-center text-muted py-3">
+                                <i class="fas fa-info-circle fa-2x mb-2"></i>
+                                <p class="mb-0 small">Click on a car wash to see competition density</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
 
                 <!-- Business Mode Parameters -->
                 <div class="card mb-3 shadow-sm" id="business-params-card" style="display:none;">
@@ -104,11 +147,12 @@
                                 min="0" step="0.1">
                         </div>
                         <div class="mb-3">
-                            <label for="max-settlement-distance-km" class="form-label">Max Settlement Distance (km)</label>
+                            <label for="max-settlement-distance-km" class="form-label">Max Settlement Distance
+                                (km)</label>
                             <input type="number" class="form-control form-control-sm" id="max-settlement-distance-km"
                                 value="10" min="0" step="0.1">
                         </div>
-                        
+
                         <!-- Circle Parameters -->
                         <div id="circle-recommend-params" style="display:none;">
                             <hr>
@@ -129,7 +173,7 @@
                                     value="10" min="0" step="0.1">
                             </div>
                         </div>
-                        
+
                         <!-- Polygon Controls -->
                         <div id="polygon-recommend-controls" style="display:none;">
                             <hr>
@@ -169,7 +213,8 @@
                                 <i class="fas fa-list-ul text-primary me-2"></i>
                                 <span class="fw-bold">Nearby Car Washes</span>
                             </div>
-                            <button class="btn btn-sm btn-close" onclick="document.getElementById('nearby-carwashes-floating').style.display='none'"></button>
+                            <button class="btn btn-sm btn-close"
+                                onclick="document.getElementById('nearby-carwashes-floating').style.display='none'"></button>
                         </div>
                         <div class="card-body p-0">
                             <ul class="list-group list-group-flush" id="nearby-carwashes-list">
@@ -180,14 +225,16 @@
                 </div>
 
                 <!-- Floating Saved Recommendations Card -->
-                <div id="saved-recommendations-floating" class="floating-card floating-card-right" style="display:none;">
+                <div id="saved-recommendations-floating" class="floating-card floating-card-right"
+                    style="display:none;">
                     <div class="card shadow">
                         <div class="card-header d-flex align-items-center justify-content-between">
                             <div>
                                 <i class="fas fa-bookmark text-success me-2"></i>
                                 <span class="fw-bold">Saved Recommendations</span>
                             </div>
-                            <button class="btn btn-sm btn-close" onclick="document.getElementById('saved-recommendations-floating').style.display='none'"></button>
+                            <button class="btn btn-sm btn-close"
+                                onclick="document.getElementById('saved-recommendations-floating').style.display='none'"></button>
                         </div>
                         <div class="card-body p-0">
                             <ul class="list-group list-group-flush" id="saved-recommendations-list">

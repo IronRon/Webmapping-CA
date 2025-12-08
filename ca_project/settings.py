@@ -31,9 +31,11 @@ SECRET_KEY = 'django-insecure-^03kp8&=-1c$6fn!@qjrjg*(gwv94bya53z7)p3ixt8%j2q3h8
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+OPENWEATHER_API_KEY = os.getenv('OPENWEATHERMAP_API_KEY')
+
 ALLOWED_HOSTS = os.getenv(
     "ALLOWED_HOSTS",
-    "localhost,127.0.0.1"
+    "localhost,127.0.0.1,10.12.74.49"
 ).split(",")
 
 
@@ -170,6 +172,23 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # CORS settings for development
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://10.12.74.49:8000",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000"
+]
+
+# Allow CSRF from mobile app
+CSRF_COOKIE_HTTPONLY = False
+CSRF_COOKIE_SAMESITE = None
+CSRF_COOKIE_SECURE = False
+
+SESSION_COOKIE_SAMESITE = None
+SESSION_COOKIE_SECURE = False
+SESSION_COOKIE_HTTPONLY = False
+
+X_FRAME_OPTIONS = 'ALLOWALL'
 
 # OpenStreetMap / Overpass API settings
 OVERPASS_API_URL = "https://overpass-api.de/api/interpreter"

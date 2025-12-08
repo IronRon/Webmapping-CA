@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     initializeMap();
     setupEventListeners();
+    setupMobileSidebar();
     loadSampleData();
     if (currentMode === 'business') {
         loadCountyBoundaries();
@@ -47,6 +48,53 @@ function initializeMap() {
         console.error('Failed to initialize map:', error);
         showAlert('danger', 'Failed to initialize map. Please refresh the page.');
     }
+}
+
+/**
+ * Set up mobile sidebar toggle
+ */
+function setupMobileSidebar() {
+    const sidebarToggle = document.getElementById('sidebar-toggle');
+    const sidebarPanel = document.getElementById('sidebar-panel');
+    const sidebarOverlay = document.getElementById('sidebar-overlay');
+    
+    if (!sidebarToggle || !sidebarPanel || !sidebarOverlay) return;
+    
+    // Toggle sidebar on button click
+    sidebarToggle.addEventListener('click', function() {
+        sidebarPanel.classList.toggle('show');
+        sidebarOverlay.classList.toggle('show');
+        
+        // Change icon
+        const icon = sidebarToggle.querySelector('i');
+        if (sidebarPanel.classList.contains('show')) {
+            icon.classList.remove('fa-bars');
+            icon.classList.add('fa-times');
+        } else {
+            icon.classList.remove('fa-times');
+            icon.classList.add('fa-bars');
+        }
+    });
+    
+    // Close sidebar when clicking overlay
+    sidebarOverlay.addEventListener('click', function() {
+        sidebarPanel.classList.remove('show');
+        sidebarOverlay.classList.remove('show');
+        const icon = sidebarToggle.querySelector('i');
+        icon.classList.remove('fa-times');
+        icon.classList.add('fa-bars');
+    });
+    
+    // Close sidebar when map is clicked (on mobile)
+    map.on('click', function() {
+        if (window.innerWidth <= 768 && sidebarPanel.classList.contains('show')) {
+            sidebarPanel.classList.remove('show');
+            sidebarOverlay.classList.remove('show');
+            const icon = sidebarToggle.querySelector('i');
+            icon.classList.remove('fa-times');
+            icon.classList.add('fa-bars');
+        }
+    });
 }
 
 /**
@@ -220,10 +268,31 @@ function loadSampleData() {
             L.geoJSON(data, {
                 pointToLayer: function (feature, latlng) {
                     const icon = L.divIcon({
-                        className: 'custom-marker',
-                        html: `<div style=\"background-color: #0d6efd; width: 14px; height: 14px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.4);\"></div>`,
-                        iconSize: [18, 18],
-                        iconAnchor: [9, 9]
+                        className: 'custom-marker carwash-marker',
+                        html: `
+                            <div style="
+                                background: linear-gradient(135deg, #0dcaf0 0%, #0d6efd 100%);
+                                width: 32px;
+                                height: 32px;
+                                border-radius: 50% 50% 50% 0;
+                                transform: rotate(-45deg);
+                                border: 3px solid white;
+                                box-shadow: 0 3px 8px rgba(0,0,0,0.4);
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                            ">
+                                <i class="fas fa-car" style="
+                                    color: white;
+                                    font-size: 14px;
+                                    transform: rotate(45deg);
+                                    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+                                "></i>
+                            </div>
+                        `,
+                        iconSize: [32, 32],
+                        iconAnchor: [16, 32],
+                        popupAnchor: [0, -32]
                     });
                     return L.marker(latlng, { icon });
                 },
@@ -247,6 +316,72 @@ function loadSampleData() {
                     if (props.email) popupContent += `<b>Email:</b> <a href='mailto:${props.email}'>${props.email}</a><br>`;
                     if (props.description) popupContent += `<b>Description:</b> ${props.description}<br>`;
                     layer.bindPopup(popupContent);
+                    layer.on('click', async () => {
+                        const wash = {
+                            name: feature.properties.name || "Car Wash",
+                            lat: feature.geometry.coordinates[1],
+                            lng: feature.geometry.coordinates[0]
+                        };
+
+                        // Show different analysis based on current mode
+                        if (currentMode === 'user') {
+                            try {
+                                const weather = await fetchWeather(wash.lat, wash.lng);
+                                showWeatherInSidebar(wash, weather);
+                            } catch (err) {
+                                console.error('Weather fetch error:', err);
+                                // Show error message in weather panel
+                                const panel = document.getElementById("weather-panel");
+                                const content = document.getElementById("weather-content");
+                                if (content && currentMode === 'user') {
+                                    content.innerHTML = `
+                                        <div class="weather-advisory">
+                                            <div class="weather-header">
+                                                <h6 class="weather-location">${wash.name}</h6>
+                                            </div>
+                                            <div class="wash-recommendation neutral">
+                                                <div class="recommendation-icon">
+                                                    <i class="fas fa-exclamation-triangle"></i>
+                                                </div>
+                                                <div class="recommendation-title">Weather Data Unavailable</div>
+                                                <p class="recommendation-message">Unable to fetch weather information at this time.</p>
+                                            </div>
+                                        </div>
+                                    `;
+                                    if (panel) panel.style.display = 'block';
+                                }
+                            }
+                        } else if (currentMode === 'business') {
+                            try {
+                                const competition = await fetchCompetition(wash.lat, wash.lng);
+                                showCompetitionInSidebar(wash, competition);
+                            } catch (err) {
+                                console.error('Competition fetch error:', err);
+                                // Show error message in competition panel
+                                const panel = document.getElementById("competition-panel");
+                                const content = document.getElementById("competition-content");
+                                if (content && currentMode === 'business') {
+                                    content.innerHTML = `
+                                        <div class="competition-advisory">
+                                            <div class="competition-header">
+                                                <h6 class="competition-location">${wash.name}</h6>
+                                            </div>
+                                            <div class="competition-recommendation medium">
+                                                <div class="competition-icon">
+                                                    <i class="fas fa-exclamation-triangle"></i>
+                                                </div>
+                                                <h6 class="competition-title">Analysis Unavailable</h6>
+                                                <p class="competition-message">
+                                                    Unable to fetch competition data. Please try again later.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    `;
+                                    if (panel) panel.style.display = 'block';
+                                }
+                            }
+                        }
+                    });
                 }
             }).addTo(map);
             showMapLoading(false);
@@ -698,10 +833,10 @@ function setBusinessRecommendMode(mode) {
     document.getElementById('county-recommend-mode-btn').classList.toggle('active', mode === 'county');
     document.getElementById('circle-recommend-mode-btn').classList.toggle('active', mode === 'circle');
     document.getElementById('polygon-recommend-mode-btn').classList.toggle('active', mode === 'polygon');
-    
+
     // Show/hide parameters based on mode
     document.getElementById('circle-recommend-params').style.display = (mode === 'circle') ? '' : 'none';
-    
+
     const polygonControls = document.getElementById('polygon-recommend-controls');
     if (polygonControls) {
         polygonControls.style.display = (mode === 'polygon') ? '' : 'none';
@@ -750,11 +885,11 @@ function setMode(mode) {
     currentMode = mode;
     document.getElementById('user-mode-btn').classList.toggle('active', mode === 'user');
     document.getElementById('business-mode-btn').classList.toggle('active', mode === 'business');
-    
+
     // Show/hide business recommendation toolbar
     const toolbar = document.getElementById('business-recommendation-toolbar');
     if (toolbar) toolbar.style.display = (mode === 'business') ? '' : 'none';
-    
+
     // Remove circle if switching away from business circle mode
     if ((mode !== 'business' || businessRecommendMode !== 'circle') && window.businessCircle) {
         map.removeLayer(window.businessCircle);
@@ -769,7 +904,7 @@ function setMode(mode) {
     if (businessParamsCard) {
         businessParamsCard.style.display = (mode === 'business') ? '' : 'none';
     }
-    
+
     // Hide nearby car washes floating card if not in user mode
     const nearbyCard = document.getElementById('nearby-carwashes-floating');
     if (nearbyCard) nearbyCard.style.display = (mode === 'user') ? '' : 'none';
@@ -777,11 +912,39 @@ function setMode(mode) {
         const list = document.getElementById('nearby-carwashes-list');
         if (list) list.innerHTML = '';
     }
-    
+
     // Show/hide saved recommendations floating card
     const savedCard = document.getElementById('saved-recommendations-floating');
     if (savedCard) savedCard.style.display = (mode === 'business') ? 'block' : 'none';
     
+    // Show/hide weather panel based on mode
+    const weatherPanel = document.getElementById('weather-panel');
+    if (weatherPanel) {
+        if (mode === 'user') {
+            // Only show if there's actual weather content (not the default message)
+            const weatherContent = document.getElementById('weather-content');
+            if (weatherContent && !weatherContent.querySelector('.text-muted')) {
+                weatherPanel.style.display = 'block';
+            }
+        } else {
+            weatherPanel.style.display = 'none';
+        }
+    }
+    
+    // Show/hide competition panel based on mode
+    const competitionPanel = document.getElementById('competition-panel');
+    if (competitionPanel) {
+        if (mode === 'business') {
+            // Only show if there's actual competition content (not the default message)
+            const competitionContent = document.getElementById('competition-content');
+            if (competitionContent && !competitionContent.querySelector('.text-muted')) {
+                competitionPanel.style.display = 'block';
+            }
+        } else {
+            competitionPanel.style.display = 'none';
+        }
+    }
+
     if (window.tempMarker) {
         map.removeLayer(window.tempMarker);
         window.tempMarker = null;
@@ -795,9 +958,35 @@ function setMode(mode) {
         setBusinessRecommendMode(businessRecommendMode);
         loadSavedRecommendations();
     }
-    
+
     // Update instructions
     updateInstructions(mode);
+    
+    // Reset weather panel content when switching modes
+    if (mode === 'business') {
+        const weatherContent = document.getElementById('weather-content');
+        if (weatherContent) {
+            weatherContent.innerHTML = `
+                <div class="text-center text-muted py-3">
+                    <i class="fas fa-info-circle fa-2x mb-2"></i>
+                    <p class="mb-0 small">Click on a car wash to see weather advice</p>
+                </div>
+            `;
+        }
+    }
+    
+    // Reset competition panel content when switching modes
+    if (mode === 'user') {
+        const competitionContent = document.getElementById('competition-content');
+        if (competitionContent) {
+            competitionContent.innerHTML = `
+                <div class="text-center text-muted py-3">
+                    <i class="fas fa-info-circle fa-2x mb-2"></i>
+                    <p class="mb-0 small">Click on a car wash to see competition density</p>
+                </div>
+            `;
+        }
+    }
 }
 
 // --- Instructions UI Logic ---
@@ -1109,4 +1298,152 @@ function saveRecommendation() {
             console.error(err);
             showAlert('danger', 'Failed to save recommendation.');
         });
+}
+
+
+async function fetchWeather(lat, lon) {
+    const res = await fetch(`/api/weather/?lat=${lat}&lon=${lon}`);
+
+    if (!res.ok) {
+        throw new Error("Weather API failed");
+    }
+
+    return await res.json();
+}
+
+
+function showWeatherInSidebar(wash, weather) {
+    const panel = document.getElementById("weather-panel");
+    const content = document.getElementById("weather-content");
+    
+    if (!panel || !content) return;
+    
+    // Determine recommendation status
+    let recommendClass = 'neutral';
+    let recommendIcon = 'fa-cloud';
+    let recommendTitle = 'Check Weather Conditions';
+    let recommendMessage = 'Current weather conditions may affect wash quality.';
+    
+    if (weather.good_for_wash) {
+        recommendClass = 'good';
+        recommendIcon = 'fa-check-circle';
+        recommendTitle = 'Great Time to Wash!';
+        recommendMessage = 'Clear skies ahead. Perfect conditions for a sparkling clean car!';
+    } else {
+        // Check if it's actually raining
+        const weatherDesc = weather.description.toLowerCase();
+        if (weatherDesc.includes('rain') || weatherDesc.includes('drizzle') || weatherDesc.includes('shower')) {
+            recommendClass = 'bad';
+            recommendIcon = 'fa-times-circle';
+            recommendTitle = 'Not Recommended';
+            recommendMessage = 'Rain detected. Your car will get dirty again soon. Wait for better weather!';
+        } else if (weatherDesc.includes('cloud') || weatherDesc.includes('overcast')) {
+            recommendClass = 'neutral';
+            recommendIcon = 'fa-cloud';
+            recommendTitle = 'Okay to Wash';
+            recommendMessage = 'Cloudy but dry. Decent time for a wash, though sunshine would be better.';
+        }
+    }
+    
+    content.innerHTML = `
+        <div class="weather-advisory">
+            <div class="weather-header">
+                <h6 class="weather-location">${wash.name || 'Car Wash'}</h6>
+                <div class="weather-icon-display">
+                    <img src="https://openweathermap.org/img/wn/${weather.icon}@2x.png" alt="Weather icon">
+                </div>
+            </div>
+            
+            <div class="weather-details">
+                <div class="weather-stat">
+                    <span class="weather-stat-label">Temperature</span>
+                    <span class="weather-stat-value">${weather.temp}°C</span>
+                </div>
+                <div class="weather-stat">
+                    <span class="weather-stat-label">Conditions</span>
+                    <span class="weather-stat-value" style="font-size: 0.9rem; text-transform: capitalize;">${weather.description}</span>
+                </div>
+            </div>
+            
+            <div class="wash-recommendation ${recommendClass}">
+                <div class="recommendation-icon">
+                    <i class="fas ${recommendIcon}"></i>
+                </div>
+                <div class="recommendation-title">${recommendTitle}</div>
+                <p class="recommendation-message">${recommendMessage}</p>
+            </div>
+        </div>
+    `;
+    
+    // Show panel in user mode only
+    if (currentMode === 'user') {
+        panel.style.display = 'block';
+    }
+}
+
+async function fetchCompetition(lat, lon, radius = 3) {
+    const res = await fetch(`/api/competition/?lat=${lat}&lon=${lon}&radius=${radius}`);
+    if (!res.ok) throw new Error("Competition fetch failed");
+    return await res.json();
+}
+
+function showCompetitionInSidebar(wash, data) {
+    const panel = document.getElementById("competition-panel");
+    const content = document.getElementById("competition-content");
+    
+    if (!content || currentMode !== 'business') return;
+    
+    // Determine saturation level and corresponding recommendation
+    let saturationClass = 'medium';
+    let saturationIcon = 'fa-circle';
+    let saturationTitle = 'Moderate Competition';
+    let saturationMessage = 'Caution advised - moderate market presence in this area.';
+    
+    if (data.saturation_level === 'Low') {
+        saturationClass = 'low';
+        saturationIcon = 'fa-check-circle';
+        saturationTitle = 'Low Competition';
+        saturationMessage = 'Excellent opportunity - this area has low market saturation and good potential for business growth.';
+    } else if (data.saturation_level === 'High') {
+        saturationClass = 'high';
+        saturationIcon = 'fa-times-circle';
+        saturationTitle = 'High Competition';
+        saturationMessage = 'Not recommended - this area is saturated with competitors. Consider alternative locations.';
+    }
+    
+    content.innerHTML = `
+        <div class="competition-advisory">
+            <div class="competition-header">
+                <h6 class="competition-location">${wash.name}</h6>
+                <div style="font-size: 0.85rem; color: var(--text-muted);">
+                    <i class="fas fa-crosshairs me-1"></i>${data.radius_km} km radius
+                </div>
+            </div>
+            
+            <div class="competition-stats">
+                <div class="competition-stat-row">
+                    <span class="competition-stat-label">
+                        <i class="fas fa-building me-1"></i>Competitors Found
+                    </span>
+                    <span class="competition-stat-value">${data.competitor_count}</span>
+                </div>
+                <div class="competition-stat-row">
+                    <span class="competition-stat-label">
+                        <i class="fas fa-chart-pie me-1"></i>Market Density
+                    </span>
+                    <span class="competition-stat-value">${data.saturation_level}</span>
+                </div>
+            </div>
+            
+            <div class="competition-recommendation ${saturationClass}">
+                <div class="competition-icon">
+                    <i class="fas ${saturationIcon}"></i>
+                </div>
+                <h6 class="competition-title">${saturationTitle}</h6>
+                <p class="competition-message">${saturationMessage}</p>
+            </div>
+        </div>
+    `;
+    
+    panel.style.display = 'block';
 }

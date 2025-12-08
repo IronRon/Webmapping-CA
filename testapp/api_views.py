@@ -1,4 +1,5 @@
 import json
+from ca_project import settings
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -8,6 +9,9 @@ from django.contrib.gis.geos import GEOSGeometry
 from .models import IrishCounty, Location, PopulationPoint, SavedRecommendation
 from .serializers import CarwashRecommendationSerializer, CarwashSerializer, IrishCountyGeoSerializer, NearbyCarwashSerializer, CarwashGeoSerializer, SavedRecommendationSerializer
 from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+import requests
+from django.contrib.gis.measure import D
 
 @api_view(['GET'])
 def nearest_carwash_api(request):
@@ -441,3 +445,94 @@ def list_saved_recommendations_api(request):
 
     serializer = SavedRecommendationSerializer(recs, many=True)
     return Response({'recommendations': serializer.data})
+
+@api_view(['GET'])
+def get_weather(request):
+    """
+    Return simplified weather information for a given lat/lon.
+    Used to advise whether it is a good time to wash a car.
+    """
+
+    lat = request.GET.get("lat")
+    lon = request.GET.get("lon")
+
+    if not lat or not lon:
+        return JsonResponse({"error": "Missing coordinates"}, status=400)
+
+    url = "https://api.openweathermap.org/data/2.5/weather"
+    params = {
+        "lat": lat,
+        "lon": lon,
+        "units": "metric",
+        "appid": settings.OPENWEATHER_API_KEY
+    }
+
+    r = requests.get(url, params=params)
+    data = r.json()
+
+    # Simple business logic (your CA wants this 👇)
+    raining = data["weather"][0]["main"].lower() == "rain"
+    good_time = not raining
+
+    return JsonResponse({
+        "name": data["name"],
+        "temp": data["main"]["temp"],
+        "description": data["weather"][0]["description"],
+        "icon": data["weather"][0]["icon"],
+        "good_for_wash": good_time
+    })
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def competition_density(request):
+    """
+    Return competition density information for a selected car wash location.
+
+    This endpoint calculates how many competing car wash locations
+    exist within a specified radius of a given point. It is designed
+    for business users to assess market saturation and suitability
+    for new car wash development.
+
+    Query parameters:
+    - lat: Latitude of the selected car wash
+    - lon: Longitude of the selected car wash
+    - radius (optional): Search radius in kilometres (default = 3km)
+
+    Returns:
+    - radius_km: The radius used for analysis
+    - competitor_count: Number of competing car washes
+    - saturation_level: Low / Medium / High
+    """
+
+    try:
+        lat = float(request.GET.get("lat"))
+        lon = float(request.GET.get("lon"))
+        radius_km = float(request.GET.get("radius", 3))
+    except (TypeError, ValueError):
+        return Response(
+            {"error": "Invalid or missing coordinates"},
+            status=400
+        )
+
+    centre_point = Point(lon, lat, srid=4326)
+
+    competitors = Location.objects.filter(
+        point__distance_lte=(centre_point, D(km=radius_km))
+    )
+
+    competitor_count = competitors.count()
+
+    # Simple saturation classification
+    if competitor_count <= 3:
+        saturation_level = "Low"
+    elif competitor_count <= 8:
+        saturation_level = "Medium"
+    else:
+        saturation_level = "High"
+
+    return Response({
+        "radius_km": radius_km,
+        "competitor_count": competitor_count,
+        "saturation_level": saturation_level
+    })
