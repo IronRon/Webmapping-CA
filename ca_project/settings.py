@@ -172,11 +172,18 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # CORS settings for development
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost",
+    "http://127.0.0.1",
+]
 
 CSRF_TRUSTED_ORIGINS = [
+    "http://172.199.24.2",
     "http://10.12.74.49:8000",
     "http://localhost:8000",
-    "http://127.0.0.1:8000"
+    "http://localhost",
+    "http://127.0.0.1:8000",
+    "http://127.0.0.1"
 ]
 
 # Allow CSRF from mobile app

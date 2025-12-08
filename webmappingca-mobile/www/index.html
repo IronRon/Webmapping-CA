@@ -1,34 +1,8 @@
 <!DOCTYPE html>
-<!--
-    Licensed to the Apache Software Foundation (ASF) under one
-    or more contributor license agreements.  See the NOTICE file
-    distributed with this work for additional information
-    regarding copyright ownership.  The ASF licenses this file
-    to you under the Apache License, Version 2.0 (the
-    "License"); you may not use this file except in compliance
-    with the License.  You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing,
-    software distributed under the License is distributed on an
-    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-     KIND, either express or implied.  See the License for the
-    specific language governing permissions and limitations
-    under the License.
--->
-<html>
+<html lang="en">
 
 <head>
     <meta charset="utf-8">
-    <!--
-        Customize this policy to fit your own app's needs. For more guidance, please refer to the docs:
-            https://cordova.apache.org/docs/en/latest/
-        Some notes:
-            * https://ssl.gstatic.com is required only on Android and is needed for TalkBack to function properly
-            * Disables use of inline scripts in order to mitigate risk of XSS vulnerabilities. To change this:
-                * Enable inline JS: add 'unsafe-inline' to default-src
-        -->
     <meta http-equiv="Content-Security-Policy" content="
         default-src * data: blob: 'unsafe-inline' 'unsafe-eval';
         style-src * 'unsafe-inline';
@@ -37,30 +11,177 @@
         connect-src *;
         frame-src *;
         media-src *;
-      ">
+    ">
     <meta name="format-detection" content="telephone=no">
     <meta name="msapplication-tap-highlight" content="no">
-    <meta name="viewport" content="initial-scale=1, width=device-width, viewport-fit=cover">
-    <meta name="color-scheme" content="light dark">
-    <link rel="stylesheet" href="css/index.css">
-    <title>Hello World</title>
-    <style>
-        html,
-        body,
-        iframe {
-            width: 100%;
-            height: 100%;
-            margin: 0;
-            padding: 0;
-            border: none;
-        }
-    </style>
-
+    <meta name="viewport" content="initial-scale=1, width=device-width, viewport-fit=cover, user-scalable=no">
+    <meta name="color-scheme" content="dark">
+    
+    <title>CleanMyRide Mobile</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/mobile.css">
 </head>
 
 <body>
-    <iframe src="http://10.12.74.49:8000/" allow="geolocation; fullscreen">
-    </iframe>
+    <!-- Mobile App Header -->
+    <nav class="mobile-header">
+        <div class="d-flex align-items-center justify-content-between w-100 px-3">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-car-side me-2" style="color:#ffd700;"></i>
+                <span class="header-title">CleanMyRide</span>
+            </div>
+            <button class="btn btn-sm btn-outline-light" id="menu-toggle">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Mode Toggle Bar -->
+    <div class="mode-toolbar">
+        <div class="btn-group w-100" role="group">
+            <button id="user-mode-btn" class="btn btn-sm btn-mode active">
+                <i class="fas fa-user me-1"></i>User
+            </button>
+            <button id="business-mode-btn" class="btn btn-sm btn-mode">
+                <i class="fas fa-briefcase me-1"></i>Business
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div id="map-container">
+        <div id="map"></div>
+        
+        <!-- Loading Overlay -->
+        <div id="map-loading" class="map-overlay d-none">
+            <div class="text-center">
+                <div class="spinner-border text-primary mb-3"></div>
+                <h5>Loading Map Data...</h5>
+            </div>
+        </div>
+
+        <!-- Floating Nearby Card -->
+        <div id="nearby-floating" class="floating-card" style="display:none;">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-list-ul me-2"></i>Nearby Car Washes</span>
+                    <button class="btn-close btn-close-white" onclick="document.getElementById('nearby-floating').style.display='none'"></button>
+                </div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush" id="nearby-list"></ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Map Info Box -->
+        <div class="map-info-box">
+            <small id="map-coordinates">Tap map to find car washes</small>
+        </div>
+    </div>
+
+    <!-- Sidebar Menu -->
+    <div id="sidebar-menu" class="sidebar-menu">
+        <div class="sidebar-header">
+            <h5>Menu</h5>
+            <button class="btn-close btn-close-white" id="sidebar-close"></button>
+        </div>
+        <div class="sidebar-content">
+            <!-- User Info -->
+            <div class="user-info mb-3" id="user-info-panel">
+                <div class="text-center text-muted py-3">
+                    <i class="fas fa-user-circle fa-3x mb-2"></i>
+                    <p class="mb-0">Not logged in</p>
+                    <button class="btn btn-sm btn-primary mt-2" id="login-btn">
+                        <i class="fas fa-sign-in-alt me-1"></i>Login
+                    </button>
+                </div>
+            </div>
+
+            <!-- Instructions -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <i class="fas fa-info-circle me-2"></i>Instructions
+                </div>
+                <div class="card-body small" id="instructions-content">
+                    <strong>User Mode:</strong>
+                    <ul class="mb-0 mt-1">
+                        <li>Tap anywhere to find nearest car wash</li>
+                        <li>View 10 closest locations</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Weather Panel (User Mode) -->
+            <div class="card mb-3" id="weather-panel" style="display:none;">
+                <div class="card-header">
+                    <i class="fas fa-cloud-sun me-2"></i>Weather Advisor
+                </div>
+                <div class="card-body p-0" id="weather-content">
+                    <div class="text-center text-muted py-3 small">
+                        <i class="fas fa-info-circle fa-2x mb-2"></i>
+                        <p class="mb-0">Tap a car wash for weather advice</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Competition Panel (Business Mode) -->
+            <div class="card mb-3" id="competition-panel" style="display:none;">
+                <div class="card-header">
+                    <i class="fas fa-chart-bar me-2"></i>Competition Analysis
+                </div>
+                <div class="card-body p-0" id="competition-content">
+                    <div class="text-center text-muted py-3 small">
+                        <i class="fas fa-info-circle fa-2x mb-2"></i>
+                        <p class="mb-0">Tap a car wash for market analysis</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar Overlay -->
+    <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+    <!-- Login Modal -->
+    <div class="modal fade" id="loginModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-dark text-light">
+                <div class="modal-header">
+                    <h5 class="modal-title">Login</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="login-form">
+                        <div class="mb-3">
+                            <label class="form-label">Username</label>
+                            <input type="text" class="form-control" id="username" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Password</label>
+                            <input type="password" class="form-control" id="password" required>
+                        </div>
+                        <div class="alert alert-danger d-none" id="login-error"></div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-sign-in-alt me-2"></i>Login
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script type="text/javascript" src="cordova.js"></script>
+    <script type="text/javascript" src="js/mobile.js"></script>
 </body>
 
 </html>

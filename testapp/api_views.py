@@ -12,6 +12,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 import requests
 from django.contrib.gis.measure import D
+from django.contrib.auth import authenticate, login
 
 @api_view(['GET'])
 def nearest_carwash_api(request):
@@ -535,4 +536,47 @@ def competition_density(request):
         "radius_km": radius_km,
         "competitor_count": competitor_count,
         "saturation_level": saturation_level
+    })
+
+@csrf_exempt
+def mobile_login(request):
+    """
+    Mobile API login endpoint.
+    
+    Accepts JSON:
+    {
+        "username": "...",
+        "password": "..."
+    }
+    
+    Returns:
+    {
+        success: true/false,
+        user: {...}
+    }
+    """
+    if request.method != "POST":
+        return JsonResponse({"error": "POST only"}, status=400)
+
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    username = data.get("username")
+    password = data.get("password")
+
+    user = authenticate(username=username, password=password)
+
+    if user is None:
+        return JsonResponse({"success": False, "error": "Invalid credentials"}, status=401)
+
+    login(request, user)
+
+    return JsonResponse({
+        "success": True,
+        "user": {
+            "username": user.username,
+            "email": user.email
+        }
     })

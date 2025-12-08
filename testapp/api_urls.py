@@ -14,4 +14,5 @@ urlpatterns = [
     path('recommendations/', api_views.list_saved_recommendations_api),
     path("weather/", api_views.get_weather),
     path("competition/", api_views.competition_density, name="competition-density"),
+    path("mobile_login/", api_views.mobile_login, name="mobile-login"),
 ]
