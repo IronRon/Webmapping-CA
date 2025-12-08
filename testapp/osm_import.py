@@ -1,6 +1,5 @@
 import logging
 from typing import Tuple, List
-
 import requests
 from django.conf import settings
 from django.contrib.gis.geos import Point
@@ -30,11 +29,26 @@ def fetch_carwashes_from_overpass() -> dict:
         resp.raise_for_status()
         return resp.json()
     except requests.exceptions.Timeout:
-        return "Overpass API timed out. Please try again later."
+        logger.error("Overpass API timed out. Please try again later.")
+        return {
+            "error": True,
+            "message": "Overpass API timed out. Please try again later.",
+            "elements": []
+        }
     except requests.exceptions.HTTPError as e:
-        return f"Overpass API error: {str(e)}"
+        logger.error(f"Overpass API request failed: {e}")
+        return {
+            "error": True,
+            "message": str(e),
+            "elements": []
+        }
     except requests.exceptions.RequestException as e:
-        return f"Request failed: {str(e)}"
+        logger.error(f"Overpass API request failed: {e}")
+        return {
+            "error": True,
+            "message": str(e),
+            "elements": []
+        }
 
 
 def _element_to_location_kwargs(element: dict) -> dict | None:
@@ -108,6 +122,11 @@ def replace_carwashes_from_overpass() -> Tuple[int, int]:
     Returns (imported_count, deleted_count).
     """
     data = fetch_carwashes_from_overpass()
+
+    if data.get("error"):
+        logger.error(f"Overpass error: {data.get('message')}")
+        return 0, 0
+    
     elements = data.get("elements", [])
 
     logger.info("Received %d elements from Overpass", len(elements))

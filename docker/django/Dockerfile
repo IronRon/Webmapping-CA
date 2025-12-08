@@ -26,6 +26,9 @@ ENV PROJ_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/libproj.so
 COPY docker/django/requirements.txt /app/requirements.txt
 RUN pip install --upgrade pip && pip install -r requirements.txt
 
+COPY docker/django/superuser.sh /superuser.sh
+RUN chmod +x /superuser.sh
+
 # Copy project
 COPY . /app/
 

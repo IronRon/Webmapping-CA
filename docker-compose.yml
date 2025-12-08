@@ -87,6 +87,7 @@ services:
       until pg_isready -h postgres -p 5432 -U ${DATABASE_USER}; do sleep 2; done &&
       python manage.py migrate &&
       python manage.py collectstatic --noinput &&
+      /superuser.sh &&
       python manage.py runserver 0.0.0.0:8000
       "
 
