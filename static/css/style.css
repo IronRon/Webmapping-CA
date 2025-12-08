@@ -22,6 +22,115 @@ body {
     color: var(--text-light);
 }
 
+/* Top Toolbar */
+.top-toolbar {
+    background: linear-gradient(135deg, #1a1d29 0%, #2d3142 100%);
+    border-bottom: 2px solid var(--primary-color);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    position: sticky;
+    top: 56px;
+    z-index: 1000;
+}
+
+.top-toolbar .vr {
+    background-color: rgba(255,255,255,0.2);
+}
+
+/* Sidebar Enhancements */
+.sidebar-panel {
+    height: calc(100vh - 180px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary-color) var(--bg-darker);
+}
+
+.sidebar-panel::-webkit-scrollbar {
+    width: 8px;
+}
+
+.sidebar-panel::-webkit-scrollbar-track {
+    background: var(--bg-darker);
+}
+
+.sidebar-panel::-webkit-scrollbar-thumb {
+    background-color: var(--primary-color);
+    border-radius: 4px;
+}
+
+/* Floating Cards on Map */
+.floating-card {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 999;
+    max-width: 350px;
+    max-height: 400px;
+    animation: slideInLeft 0.3s ease-out;
+}
+
+.floating-card-right {
+    left: auto;
+    right: 20px;
+    animation: slideInRight 0.3s ease-out;
+}
+
+.floating-card .card {
+    background: var(--bg-card);
+    border: none;
+    border-radius: 12px;
+}
+
+.floating-card .card-header {
+    background-color: var(--bg-darker);
+    color: var(--text-light);
+    border-bottom: 1px solid var(--border-dark);
+    border-radius: 12px 12px 0 0 !important;
+    padding: 0.75rem 1rem;
+}
+
+.floating-card .card-body {
+    max-height: 350px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary-color) var(--bg-darker);
+}
+
+.floating-card .card-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.floating-card .card-body::-webkit-scrollbar-track {
+    background: var(--bg-darker);
+}
+
+.floating-card .card-body::-webkit-scrollbar-thumb {
+    background-color: var(--primary-color);
+    border-radius: 3px;
+}
+
+@keyframes slideInLeft {
+    from {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
 /* Navigation */
 .navbar-brand {
     font-weight: 600;
@@ -172,6 +281,16 @@ body {
     border: 1px solid var(--border-dark) !important;
 }
 
+.list-group-item.bg-dark-theme {
+    border-color: var(--border-dark) !important;
+    transition: all 0.2s ease;
+}
+
+.list-group-item.bg-dark-theme:hover {
+    background: var(--bg-darker) !important;
+    transform: translateX(5px);
+}
+
 .badge-dark-theme {
     background: var(--primary-color) !important;
     color: #fff !important;
@@ -184,6 +303,41 @@ body {
 
 /* Responsive Design */
 @media (max-width: 768px) {
+    .top-toolbar {
+        top: 56px;
+    }
+    
+    .top-toolbar .row {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    
+    .top-toolbar .col-auto {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+    
+    #business-recommendation-toolbar {
+        border-top: 1px solid rgba(255,255,255,0.1);
+        padding-top: 10px;
+        margin-top: 5px;
+    }
+    
+    #business-recommendation-toolbar .vr {
+        display: none;
+    }
+    
+    .floating-card {
+        max-width: 280px;
+        left: 10px;
+        top: 10px;
+    }
+    
+    .floating-card-right {
+        right: 10px;
+        left: auto;
+    }
+    
     .map-info-box {
         bottom: 5px;
         left: 5px;

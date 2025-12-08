@@ -502,11 +502,18 @@ function loadCountyBoundaries() {
             })
                 .then(response => response.json())
                 .then(countData => {
+                    console.log('County wash counts response:', countData);
                     const counts = countData.counts;
                     let min = Infinity, max = -Infinity;
                     const countMap = {};
+
                     counts.forEach(c => {
-                        countMap[c.name_en] = c.wash_count;
+                        if (c.name) {
+                            // Store with both "County X" and "X" formats
+                            countMap[c.name] = c.wash_count;
+                            const nameWithoutCounty = c.name.replace('County ', '');
+                            countMap[nameWithoutCounty] = c.wash_count;
+                        }
                         if (c.wash_count < min) min = c.wash_count;
                         if (c.wash_count > max) max = c.wash_count;
                     });
@@ -569,10 +576,10 @@ function updateLayersForMode() {
 }
 
 /**
- * Show Nearby Car Washes List in sidebar
+ * Show Nearby Car Washes List in floating card
  */
 function showNearbyCarwashesList(carwashes) {
-    const card = document.getElementById('nearby-carwashes-card');
+    const card = document.getElementById('nearby-carwashes-floating');
     const list = document.getElementById('nearby-carwashes-list');
     if (!card || !list) return;
     // Only show in user mode
@@ -583,7 +590,7 @@ function showNearbyCarwashesList(carwashes) {
     list.innerHTML = '';
     if (!carwashes || carwashes.length === 0) {
         list.innerHTML = '<li class="list-group-item text-muted bg-dark-theme">No car washes found nearby.</li>';
-        card.style.display = '';
+        card.style.display = 'block';
         return;
     }
     carwashes.forEach((cw, idx) => {
@@ -603,7 +610,7 @@ function showNearbyCarwashesList(carwashes) {
         };
         list.appendChild(li);
     });
-    card.style.display = '';
+    card.style.display = 'block';
 }
 
 // Show recommended car wash location for a county
@@ -690,7 +697,15 @@ function setBusinessRecommendMode(mode) {
     businessRecommendMode = mode;
     document.getElementById('county-recommend-mode-btn').classList.toggle('active', mode === 'county');
     document.getElementById('circle-recommend-mode-btn').classList.toggle('active', mode === 'circle');
+    document.getElementById('polygon-recommend-mode-btn').classList.toggle('active', mode === 'polygon');
+    
+    // Show/hide parameters based on mode
     document.getElementById('circle-recommend-params').style.display = (mode === 'circle') ? '' : 'none';
+    
+    const polygonControls = document.getElementById('polygon-recommend-controls');
+    if (polygonControls) {
+        polygonControls.style.display = (mode === 'polygon') ? '' : 'none';
+    }
 
     // Remove circle if toggling away from circle mode
     if (mode !== 'circle' && window.businessCircle) {
@@ -718,7 +733,6 @@ function setBusinessRecommendMode(mode) {
             }
         });
     }
-
 }
 
 function handleCountyClick(e) {
@@ -736,6 +750,11 @@ function setMode(mode) {
     currentMode = mode;
     document.getElementById('user-mode-btn').classList.toggle('active', mode === 'user');
     document.getElementById('business-mode-btn').classList.toggle('active', mode === 'business');
+    
+    // Show/hide business recommendation toolbar
+    const toolbar = document.getElementById('business-recommendation-toolbar');
+    if (toolbar) toolbar.style.display = (mode === 'business') ? '' : 'none';
+    
     // Remove circle if switching away from business circle mode
     if ((mode !== 'business' || businessRecommendMode !== 'circle') && window.businessCircle) {
         map.removeLayer(window.businessCircle);
@@ -750,13 +769,19 @@ function setMode(mode) {
     if (businessParamsCard) {
         businessParamsCard.style.display = (mode === 'business') ? '' : 'none';
     }
-    // Hide nearby car washes list if not in user mode
-    const card = document.getElementById('nearby-carwashes-card');
-    if (card) card.style.display = (mode === 'user') ? '' : 'none';
-    if (card && mode !== 'user') {
+    
+    // Hide nearby car washes floating card if not in user mode
+    const nearbyCard = document.getElementById('nearby-carwashes-floating');
+    if (nearbyCard) nearbyCard.style.display = (mode === 'user') ? '' : 'none';
+    if (nearbyCard && mode !== 'user') {
         const list = document.getElementById('nearby-carwashes-list');
         if (list) list.innerHTML = '';
     }
+    
+    // Show/hide saved recommendations floating card
+    const savedCard = document.getElementById('saved-recommendations-floating');
+    if (savedCard) savedCard.style.display = (mode === 'business') ? 'block' : 'none';
+    
     if (window.tempMarker) {
         map.removeLayer(window.tempMarker);
         window.tempMarker = null;
@@ -770,6 +795,9 @@ function setMode(mode) {
         setBusinessRecommendMode(businessRecommendMode);
         loadSavedRecommendations();
     }
+    
+    // Update instructions
+    updateInstructions(mode);
 }
 
 // --- Instructions UI Logic ---
@@ -975,7 +1003,7 @@ function loadSavedRecommendations() {
 }
 
 function renderSavedRecommendations() {
-    const card = document.getElementById('saved-recommendations-card');
+    const card = document.getElementById('saved-recommendations-floating');
     const list = document.getElementById('saved-recommendations-list');
 
     if (!card || !list) return;
@@ -990,21 +1018,21 @@ function renderSavedRecommendations() {
 
     if (savedRecommendations.length === 0) {
         list.innerHTML = `
-            <li class="list-group-item text-muted">
+            <li class="list-group-item text-muted bg-dark-theme">
                 No saved recommendations yet.
             </li>`;
-        card.style.display = '';
+        card.style.display = 'block';
         return;
     }
 
     savedRecommendations.forEach((rec, idx) => {
         const li = document.createElement('li');
-        li.className = 'list-group-item list-group-item-action';
+        li.className = 'list-group-item list-group-item-action bg-dark-theme';
         li.style.cursor = 'pointer';
 
         li.innerHTML = `
             <div>
-                <strong>${rec.source_type.toUpperCase()}</strong><br>
+                <strong style="color:var(--success-color);">${rec.source_type.toUpperCase()}</strong><br>
                 <small class="text-muted">
                     ${new Date(rec.created_at).toLocaleString()}
                 </small>
@@ -1016,7 +1044,7 @@ function renderSavedRecommendations() {
         list.appendChild(li);
     });
 
-    card.style.display = '';
+    card.style.display = 'block';
 }
 
 function showSavedRecommendationOnMap(rec) {
