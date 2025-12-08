@@ -1,0 +1,50 @@
+<?xml version='1.0' encoding='utf-8'?>
+<widget id="com.tud.webmappingCA" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+    <name>WebmappingCA</name>
+    <description>
+        A sample Apache Cordova application that responds to the deviceready event.
+    </description>
+    <author email="dev@cordova.apache.org" href="https://cordova.apache.org">
+        Apache Cordova Team
+    </author>
+    <content src="index.html" />
+
+     <!-- Universal Access -->
+    <access origin="*" />
+    <allow-intent href="http://*/*" />
+    <allow-intent href="https://*/*" />
+    <allow-intent href="*" />
+    <allow-navigation href="*" />
+
+    <!-- Permissions -->
+    <preference name="permissions" value="none" />
+    <preference name="Orientation" value="default" />
+    <preference name="target-device" value="universal" />
+    <preference name="fullscreen" value="false" />
+    <preference name="StatusBarOverlaysWebView" value="false" />
+    <preference name="StatusBarBackgroundColor" value="#667eea" />
+    <preference name="AndroidInsecureFileModeEnabled" value="true" />
+    <preference name="android-usesCleartextTraffic" value="true" />
+
+    <!-- Android Configuration -->
+    <platform name="android">
+        <preference name="android-minSdkVersion" value="24" />
+        <preference name="android-compileSdkVersion" value="35" />
+        <preference name="android-targetSdkVersion" value="35" />
+        <allow-intent href="market:*" />
+        <resource-file
+            src="resources/android/xml/network_security_config.xml"
+            target="app/src/main/res/xml/network_security_config.xml" />
+        <edit-config
+            file="app/src/main/AndroidManifest.xml"
+            mode="merge"
+            target="/manifest/application"
+            xmlns:android="http://schemas.android.com/apk/res/android">
+
+            <application android:networkSecurityConfig="@xml/network_security_config" />
+        </edit-config>
+    </platform>
+
+    <allow-intent href="http://*/*" />
+    <allow-intent href="https://*/*" />
+</widget>
